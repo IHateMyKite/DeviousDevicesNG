@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceReader.h"
+#include "HooksVirtual.h"
 #include "InventoryFilter.h"
 #include <detours/detours.h>
 #include "Script.hpp"
@@ -8,6 +9,13 @@
 
 namespace DeviousDevices {
     namespace Hooks {
+        static bool DDInventoryUnequip = false;
+        static std::recursive_mutex unequip_mutex;
+        static bool GetNormalUnequipMode() {
+            std::lock_guard<std::recursive_mutex> lk(unequip_mutex);
+            return DDInventoryUnequip;
+        }
+
         DeviceReader* g_dManager;
 
         template <class F, class T>
@@ -139,7 +147,7 @@ namespace DeviousDevices {
 
             static inline void Install() 
             {
-                const uintptr_t loc_UpdatePlayerMovementAddress = REL::VariantID(41291, 42371, 0x72DF10).address();
+                const uintptr_t loc_UpdatePlayerMovementAddress = REL::VariantID(41291, 42371,0x72df10).address();
                 func = (decltype(func))loc_UpdatePlayerMovementAddress;
                 
                 DetourTransactionBegin();
@@ -151,7 +159,7 @@ namespace DeviousDevices {
 
         //
 
-        typedef void(WINAPI* OriginalEquipObject)(  RE::ActorEquipManager* a_1, 
+        typedef bool(WINAPI* OriginalEquipObject)(  RE::ActorEquipManager* a_1, 
                                                     RE::Actor* a_actor,
                                                     RE::TESBoundObject* a_object, 
                                                     RE::ExtraDataList* a_extraData,
@@ -161,6 +169,9 @@ namespace DeviousDevices {
                                                     bool a_forceEquip, 
                                                     bool a_playSounds, 
                                                     bool a_applyNow);
+        typedef void(WINAPI* OriginalInventoryUIUnequipObject)(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,
+                                                       uint64_t arg4);
+
         typedef bool(WINAPI* OriginalUnequipObject)(RE::ActorEquipManager* a_1, 
                                                     RE::Actor* a_actor,
                                                     RE::TESBoundObject* a_object,
@@ -181,9 +192,10 @@ namespace DeviousDevices {
 
         inline OriginalEquipObject      _EquipObject;
         inline OriginalUnequipObject    _UnequipObject;
+        inline OriginalInventoryUIUnequipObject _InventoryUIUnequipObject;
         inline OriginalEquipObject2     _EquipObject2;
 
-        inline void EquipObject(RE::ActorEquipManager*      a_1,
+        static bool EquipObject(RE::ActorEquipManager*      a_1,
                                 RE::Actor*                  a_actor,
                                 RE::TESBoundObject*         a_item,
                                 RE::ExtraDataList*          a_extraData,
@@ -194,19 +206,60 @@ namespace DeviousDevices {
                                 bool                        a_playSounds,
                                 bool                        a_applyNow)
         {
+            
 
-            // Apply inventory filter
-            if (InventoryFilter::GetSingleton()->EquipFilter(a_actor, a_item)) {
-                LOG("EquipObject restricted <{:08X}:{}> for <{:08X}:{}>", a_item->GetFormID(), a_item->GetName(),
-                    a_actor->GetFormID(), a_actor->GetName())
-                return;
+            if (DeviceReader::GetSingleton() && a_actor && a_item && a_item->As<RE::TESObjectARMO>()) {
+                RE::TESObjectARMO* armor=a_item->As<RE::TESObjectARMO>();
+                {
+                    auto device = DeviceReader::GetSingleton()->GetDeviceUnit(armor,0);
+
+                    if (device.deviceRendered) {
+                        if (device.CanEquip(a_actor)) {
+                            if (DDInventoryUnequip == false) {
+                                a_playSounds = false;
+                            }
+                            return _EquipObject(a_1, a_actor, a_item, a_extraData, a_count, a_slot, a_queueEquip, a_forceEquip, a_playSounds,
+                                a_applyNow);
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                {
+                    auto device = DeviceReader::GetSingleton()->GetDeviceUnit(armor,1);
+                    if (device.deviceRendered) {
+                        if (device.CanEquip(a_actor)) {
+                            if (DDInventoryUnequip == false) {
+                                a_playSounds = false;
+                            }
+                            return _EquipObject(a_1, a_actor, a_item, a_extraData, a_count, a_slot, a_queueEquip, a_forceEquip,
+                                                a_playSounds,
+                                a_applyNow);
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                
             }
-
-            _EquipObject(a_1, a_actor, a_item, a_extraData, a_count, a_slot, a_queueEquip, a_forceEquip, a_playSounds,
+            return _EquipObject(a_1, a_actor, a_item, a_extraData, a_count, a_slot, a_queueEquip, a_forceEquip, a_playSounds,
                          a_applyNow);
+            
         }
-
-        inline bool UnequipObject(RE::ActorEquipManager* a_1, RE::Actor* actor, RE::TESBoundObject* item,
+        static void InventoryUIUnequipObject(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,
+            uint64_t arg4)
+        {
+            {
+                std::lock_guard<std::recursive_mutex> lk(unequip_mutex);
+                DDInventoryUnequip = true;
+            }
+            _InventoryUIUnequipObject (arg0,arg1,arg2,arg3,arg4);
+            {
+                std::lock_guard<std::recursive_mutex> lk(unequip_mutex);
+                DDInventoryUnequip = false;
+            }
+        }
+        static bool UnequipObject(RE::ActorEquipManager* a_1, RE::Actor* actor, RE::TESBoundObject* item,
                                   std::uint64_t a_extraData, std::uint64_t a_count, std::uint64_t a_slot,
                                   std::uint64_t a_queueEquip, std::uint64_t a_forceEquip, std::uint64_t a_playSounds,
                                   std::uint64_t a_applyNow, std::uint64_t a_slotToReplace) {
@@ -214,16 +267,31 @@ namespace DeviousDevices {
 
             // cases: remove all items, external mod calling unequip, user trying through inventory
 
-            // need to check for quest item 
-
-            return _UnequipObject(a_1, actor, item, a_extraData, a_count, a_slot, a_queueEquip, a_forceEquip,
-                                  a_playSounds, a_applyNow, a_slotToReplace);
+            // need to check for quest item
+            if (DeviceReader::GetSingleton() && actor && item && item->formType == RE::FormType::Armor &&
+                item->As<RE::TESObjectARMO>()) {
+                if (DeviceReader::GetSingleton()->GetDisableUnequip(actor, item->As<RE::TESObjectARMO>()) == false ||
+                    (RE::UI::GetSingleton() && DeviousDevices::HooksVirtual::GetSingleton() &&
+                     RE::UI::GetSingleton()->IsMenuOpen("InventoryMenu") && (GetNormalUnequipMode()==true || (REL::Module::GetRuntime() == REL::Module::Runtime::SE) ))) {
+                    DEBUG("Unequip allowed or user requested unequip")
+                    
+                    return _UnequipObject(a_1, actor, item, a_extraData, a_count, a_slot, a_queueEquip, a_forceEquip,
+                                          a_playSounds, a_applyNow, a_slotToReplace);
+                } else {
+                    DEBUG("Unequip prevented")
+                    return false;
+                }
+            } else {
+                DEBUG("Unequip ignored and allowed")
+                return _UnequipObject(a_1, actor, item, a_extraData, a_count, a_slot, a_queueEquip, a_forceEquip,
+                                      a_playSounds, a_applyNow, a_slotToReplace);
+            }
         }
 
         // Some mods or game itself calls this method sometimes directly (mainly for NPCs). 
         // Because of that, the EquipObject hook will not work 100% of time
         // Using this will make it bulletproof
-        inline void EquipObject2(RE::ActorEquipManager* a_1,RE::Actor* a_actor, RE::TESBoundObject* a_item,
+        static void EquipObject2(RE::ActorEquipManager* a_1,RE::Actor* a_actor, RE::TESBoundObject* a_item,
                                   std::uint64_t a_extradata, std::uint64_t a_unkw)
         {
             //DEBUG("EquipBipedObject({},{}) called",a_actor->GetName(),a_item->GetName())
@@ -257,7 +325,21 @@ namespace DeviousDevices {
 
             UpdateMovementSpeedHook::Install();
             UpdateAutoMoveHook::Install();
+            {
+                const uintptr_t loc_equipTargetAddress = RE::Offset::ActorEquipManager::EquipObject.address();
+                _EquipObject = (OriginalEquipObject)loc_equipTargetAddress;
 
+                DetourTransactionBegin();
+                DetourUpdateThread(GetCurrentThread());
+                DetourAttach(&(PVOID&)_EquipObject, (PBYTE)&EquipObject);
+
+                if (DetourTransactionCommit() == NO_ERROR) {
+                    LOG("Installed papyrus hook on EqquipObject at {0:x} with replacement from address {0:x}",
+                        loc_equipTargetAddress, (void*)&EquipObject);
+                } else {
+                    WARN("Failed to install papyrus hook on EquipObject");
+                }
+            }
             const uintptr_t loc_equip2TargetAddress = REL::VariantID(37974, 38929, 0x642E30).address();
             _EquipObject2 = (OriginalEquipObject2)loc_equip2TargetAddress;
             DetourTransactionBegin();
@@ -290,6 +372,23 @@ namespace DeviousDevices {
             {
                 WARN("Failed to install papyrus hook on UnequipObject");
             }
+            if (REL::Module::GetRuntime() != REL::Module::Runtime::SE) {
+                 const uintptr_t loc_inventoryUIunequipTargetAddress =
+                    REL::VariantOffset(0x0, 0x6ca610, 0x641720).address();
+                _InventoryUIUnequipObject = (OriginalInventoryUIUnequipObject)loc_inventoryUIunequipTargetAddress;
+                DetourTransactionBegin();
+                DetourUpdateThread(GetCurrentThread());
+                DetourAttach(&(PVOID&)_InventoryUIUnequipObject, (PBYTE)&InventoryUIUnequipObject);
+
+                if (DetourTransactionCommit() == NO_ERROR) {
+                    LOG("Installed papyrus hook on InventoryUIUnequipObject at {0:x} with replacement from address "
+                        "{0:x}",
+                        loc_inventoryUIunequipTargetAddress, (void*)&InventoryUIUnequipObject);
+                } else {
+                    WARN("Failed to install papyrus hook on InventoryUIUnequipObject");
+                }
+            }
+
         }
     }
 } 
