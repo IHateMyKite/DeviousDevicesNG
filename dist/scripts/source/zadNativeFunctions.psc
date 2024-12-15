@@ -61,6 +61,8 @@ Bool[]      Function GetPropertyBoolArray   (Armor akInvDevice, String asPropert
 String[]    Function GetPropertyStringArray (Armor akInvDevice, String asPropertyName, Int aiMode = 0)  global native
 
 ; === equip rework
+        Function SetDisableUnequip (Actor akActor, Armor akInvDevice, bool abDisableUnequip)    global native
+bool    Function GetDisableUnequip (Actor akActor, Armor akInvDevice)                  global native
         Function SetManipulated (Actor akActor, Armor akInvDevice, bool abManip)    global native
 bool    Function GetManipulated (Actor akActor, Armor akInvDevice)                  global native
 

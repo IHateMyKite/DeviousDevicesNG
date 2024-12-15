@@ -143,7 +143,8 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     REGISTERPAPYRUSFUNC(GetPropertyStringArray,true);
     REGISTERPAPYRUSFUNC(GetEditingMods,true);
     REGISTERPAPYRUSFUNC(GetDeviceByName,true);
-
+    REGISTERPAPYRUSFUNC(SetDisableUnequip, true);
+    REGISTERPAPYRUSFUNC(GetDisableUnequip, true);
     REGISTERPAPYRUSFUNC(SetManipulated, true);
     REGISTERPAPYRUSFUNC(GetManipulated, true);
 

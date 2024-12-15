@@ -540,7 +540,9 @@ bool DeviceReader::EquipRenderedDevice(RE::Actor* actor, DeviceUnit* device)
 
         if (loc_rendered != nullptr) 
         {
-            return actor->AddWornItem(loc_rendered, 1, false, 0, 0);
+            if (actor->AddWornItem(loc_rendered, 1, false, 0, 0)) {
+                return true;
+            }
         } 
         else 
         {
@@ -548,10 +550,9 @@ bool DeviceReader::EquipRenderedDevice(RE::Actor* actor, DeviceUnit* device)
             return false;
         }
     } 
-    else
-    {
-        return false;
-    }
+    
+    return false;
+    
 }
 
 bool DeviceReader::UnequipRenderedDevice(RE::Actor* actor, DeviceUnit* device)

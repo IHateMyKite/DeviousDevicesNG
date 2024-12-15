@@ -247,6 +247,19 @@ namespace DeviousDevices
             return _devicesByRendered[loc_formId];
         }
 
+        inline void SetDisableUnequip(RE::Actor* a_actor, RE::TESObjectARMO* a_inv, bool disable) {
+            if ((a_actor == nullptr) || (a_inv == nullptr)) return;
+            if (disable)
+                _disableUnequip.insert({a_actor->GetFormID(), a_inv->GetFormID()});
+            else
+                _disableUnequip.erase({a_actor->GetFormID(), a_inv->GetFormID()});
+        }
+
+        inline bool GetDisableUnequip(RE::Actor* a_actor, RE::TESObjectARMO* a_inv) const {
+            if ((a_actor == nullptr) || (a_inv == nullptr)) return false;
+            return _disableUnequip.contains({a_actor->GetFormID(), a_inv->GetFormID()});
+        }
+
         inline void SetManipulated(RE::Actor* a_actor, RE::TESObjectARMO* a_inv, bool a_manip) 
         {
             if ((a_actor == nullptr) || (a_inv == nullptr)) return;
@@ -279,6 +292,7 @@ namespace DeviousDevices
         std::unordered_map<RE::FormID, DeviceUnit*>             _devicesByRendered;
         std::vector<RE::BGSKeyword*>                            _invDeviceKwds;
         std::set<std::pair<RE::FormID, RE::FormID>>             _manipulated; // serde
+        std::set<std::pair<RE::FormID, RE::FormID>>             _disableUnequip;
         bool                                                    _installed = false;
     };
 
@@ -300,15 +314,27 @@ namespace DeviousDevices
     std::vector<bool>           GetPropertyBoolArray(   PAPYRUSFUNCHANDLE,RE::TESObjectARMO* a_invdevice, std::string a_propertyname, int a_mode);
     std::vector<std::string>    GetPropertyStringArray( PAPYRUSFUNCHANDLE,RE::TESObjectARMO* a_invdevice, std::string a_propertyname, int a_mode);
 
+    // device manipulation
+    static void SetDisableUnequip(PAPYRUSFUNCHANDLE, RE::Actor* actor, RE::TESObjectARMO* inv, bool disable) {
+        LOG("SetDisableUnequip called {}",(disable==true ? 1 : 0))
+        DeviceReader::GetSingleton()->SetDisableUnequip(actor, inv, disable);
+        if (RE::TESObjectARMO* loc_res = DeviceReader::GetSingleton()->GetDeviceRender(inv)) {
+            DeviceReader::GetSingleton()->SetDisableUnequip(actor, loc_res, disable);
+        }
+    }
+    static bool GetDisableUnequip(PAPYRUSFUNCHANDLE, RE::Actor* actor, RE::TESObjectARMO* inv) {
+        LOG("GetDisableUnequip called")
+        return DeviceReader::GetSingleton()->GetDisableUnequip(actor, inv);
+    }
     
 
     // device manipulation
-    inline void SetManipulated(PAPYRUSFUNCHANDLE, RE::Actor* actor, RE::TESObjectARMO* inv, bool manip) 
+    static void SetManipulated(PAPYRUSFUNCHANDLE, RE::Actor* actor, RE::TESObjectARMO* inv, bool manip) 
     {
         LOG("SetManipulated called")
         DeviceReader::GetSingleton()->SetManipulated(actor, inv, manip);
     }
-    inline bool GetManipulated(PAPYRUSFUNCHANDLE, RE::Actor* actor, RE::TESObjectARMO* inv) 
+    static bool GetManipulated(PAPYRUSFUNCHANDLE, RE::Actor* actor, RE::TESObjectARMO* inv) 
     {
         LOG("GetManipulated called")
         return DeviceReader::GetSingleton()->GetManipulated(actor, inv);

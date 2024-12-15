@@ -390,6 +390,7 @@ Bool Function LockDevice(actor akActor, armor deviceInventory, bool force = fals
 		akActor.AddItem(deviceInventory, 1, true)
 	EndIf		
 	akActor.EquipItemEx(deviceInventory, 0, false, true)	
+	zadNativeFunctions.SetDisableUnequip(akActor,deviceInventory,true)
 	return true
 EndFunction
 
@@ -407,6 +408,8 @@ Bool Function UnlockDevice(actor akActor, armor deviceInventory, armor deviceRen
 		Log("UnlockDevice aborted because " + deviceInventory.GetName() + " is not a generic item.")
 		return false
 	Endif				
+	zadNativeFunctions.SetDisableUnequip(akActor,deviceInventory,false)
+	zadNativeFunctions.SetDisableUnequip(akActor,deviceRendered,false)
 	if akActor.IsEquipped(deviceInventory) 
 		StorageUtil.SetIntValue(akActor, "zad_RemovalToken" + deviceInventory, 1)		
 		akActor.UnequipItemEx(deviceInventory, 0, false)
@@ -524,6 +527,8 @@ Function RemoveQuestDevice(actor akActor, armor deviceInventory, armor deviceRen
 	EndIf		
 	questItemRemovalAuthorizationToken = RemovalToken
 	StorageUtil.SetIntValue(akActor, "zad_RemovalToken" + deviceInventory, 1)
+	zadNativeFunctions.SetDisableUnequip(akActor,deviceInventory,false)
+	zadNativeFunctions.SetDisableUnequip(akActor,deviceRendered,false)
 	akActor.UnequipItemEx(deviceInventory, 0, false)
 	akActor.RemoveItem(deviceRendered, 1, true) 		
     if destroyDevice
