@@ -1099,6 +1099,7 @@ bool[] Function StartThirdPersonAnimation(actor akActor, string animation, bool 
     if akActor.IsWeaponDrawn()
         return ret
     endif
+	SendDDFunctionEvent ("StartThirdPersonAnimation", akActor)
     
 	if akActor == PlayerRef
 		; Manipulate camera		
@@ -1131,6 +1132,7 @@ bool[] Function StartThirdPersonAnimation(actor akActor, string animation, bool 
 	Else
 		akActor.SetDontMove(true)
 	EndIf	
+	SendDDAnimationEvent(animation, akActor)
 	SetAnimating(akActor, true)	
 	Debug.SendAnimationEvent(akActor, animation)	
 	return ret
@@ -1149,6 +1151,7 @@ Function PlayThirdPersonAnimation(actor akActor, string animation, int duration,
 	EndIf
 	bool[] cameraState=StartThirdPersonAnimation(akActor, animation, permitRestrictive=permitRestrictive)
 	Log("Playing animation for "+duration+" seconds.")
+	SendDDFunctionEvent ("PlayThirdPersonAnimation", akActor)
 	Utility.Wait(duration)
 	EndThirdPersonAnimation(akActor, cameraState, permitRestrictive=permitRestrictive)
 EndFunction
@@ -1171,6 +1174,7 @@ Function EndThirdPersonAnimation(actor akActor, bool[] cameraState, bool permitR
 	Else
 		akActor.SetDontMove(false)
 	EndIf
+	SendDDFunctionEvent ("EndThirdPersonAnimation", akActor)	
 EndFunction
 
 
@@ -1449,6 +1453,26 @@ EndFunction
 Function SendQuestSigTerm()	
 	Int Handle = ModEvent.Create("DDI_Quest_SigTerm")
 	If (Handle)		
+		ModEvent.Send(Handle)
+	Endif	
+EndFunction
+
+;Fired when specific functions that can interupt scene/quest flows
+Function SendDDFunctionEvent (string FunctionName,actor akActor)	
+	Int Handle = ModEvent.Create("DDI_FunctionCalled")
+	If (Handle)	
+		ModEvent.PushString(Handle, FunctionName)
+		ModEvent.PushForm(Handle, akActor)		
+		ModEvent.Send(Handle)
+	Endif	
+EndFunction
+
+;Fired when specific animation is started
+Function SendDDAnimationEvent(string animation,actor akActor)	
+	Int Handle = ModEvent.Create("DDI_AnimationStarted")
+	If (Handle)
+		ModEvent.PushString(Handle, animation)
+		ModEvent.PushForm(Handle, akActor)		
 		ModEvent.Send(Handle)
 	Endif	
 EndFunction
@@ -2258,6 +2282,7 @@ EndFunction
 
 Function UpdateControls()
 	log("UpdateControls()")
+	SendDDFunctionEvent ("UpdateControls", playerRef)	
 	; Centralized control management function.
 	bool movement = true
 	bool fighting = true
