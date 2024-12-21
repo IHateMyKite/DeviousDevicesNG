@@ -228,8 +228,6 @@ Event OnEquipped(Actor akActor)
         StorageUtil.UnSetIntValue(akActor, "zad_TightenToken" + deviceInventory)
     EndIf
     OnEquippedPre(akActor, silent=silently)
-    libs.SendDeviceEquippedEvent(deviceName, akActor)
-    libs.SendDeviceEquippedEventVerbose(deviceInventory, zad_DeviousDevice, akActor)
     if !akActor.IsEquipped(DeviceInventory)
         akActor.EquipItem(DeviceInventory, false, true)
     EndIf    
@@ -260,6 +258,8 @@ Event OnEquipped(Actor akActor)
     EscapeLockpickAttemptsMade = 0
     menuDisable = false
 	DeviceWearer = akActor
+    libs.SendDeviceEquippedEvent(deviceName, akActor)
+    libs.SendDeviceEquippedEventVerbose(deviceInventory, zad_DeviousDevice, akActor)
 EndEvent
 
 Event OnUnequipped(Actor akActor)
