@@ -324,35 +324,48 @@ void DeviousDevices::DeviceHiderManager::InitWornArmor(RE::TESObjectARMO* a_armo
     //LOG("InitWornArmor called for {} on {}",a_armor->GetName(),a_actor->GetName())
 
     DeviceHiderManager* loc_manager = DeviceHiderManager::GetSingleton();
-    
     ////check if actor is force striped
-    if (!loc_manager->CheckForceStrip(a_armor,a_actor)) return;
-
-    //check if armor is device and can be hidden. If not, just render it
-    if (loc_manager->IsValidForHide(a_armor))
-    {
-        //LOG("Device {:08X} on {} is valid for hider!",a_armor->GetFormID(),a_actor->GetName())
-        if (!loc_manager->ProcessHider(a_armor,a_actor)) return;
-    } 
-    else
-    {
-        if (!a_actor->IsPlayerRef() && !loc_manager->CheckNPCArmor(a_armor,a_actor))
-        {
-            return;
+    
+    auto hider_override_slots=ConfigManager::GetSingleton()->GetArray<int>("DeviceHider.aiHiderOverrideSlots",",");
+    if (a_armor != nullptr) {
+        bool hider_override=false;
+        for (int slot: hider_override_slots) {
+            if (slot >= 30) {
+                if ((((unsigned int)a_armor->GetSlotMask()) & (1<<(slot-30)))!=0) {
+                    hider_override=true;
+                }
+            }
         }
-    }
+        if (hider_override==false) {
+    
+            if (!loc_manager->CheckForceStrip(a_armor,a_actor)) return;
 
-    if (loc_manager->IsDAVInstalled())
-    {
-        InitWornArmorDAV(a_armor,a_actor,a_biped);
-    }
-    else
-    {
-        for (auto&& itArmorAddon : a_armor->armorAddons) 
-        {
-            if (HasRace(itArmorAddon,loc_race)) 
+            //check if armor is device and can be hidden. If not, just render it
+            if (loc_manager->IsValidForHide(a_armor))
             {
-                InitWornArmorAddon(itArmorAddon,a_armor,a_biped,loc_sex);
+                //LOG("Device {:08X} on {} is valid for hider!",a_armor->GetFormID(),a_actor->GetName())
+                if (!loc_manager->ProcessHider(a_armor,a_actor)) return;
+            } 
+            else
+            {
+                if (!a_actor->IsPlayerRef() && !loc_manager->CheckNPCArmor(a_armor,a_actor))
+                {
+                    return;
+                }
+            }
+        }
+        if (loc_manager->IsDAVInstalled())
+        {
+            InitWornArmorDAV(a_armor,a_actor,a_biped);
+        }
+        else
+        {
+            for (auto&& itArmorAddon : a_armor->armorAddons) 
+            {
+                if (HasRace(itArmorAddon,loc_race)) 
+                {
+                    InitWornArmorAddon(itArmorAddon,a_armor,a_biped,loc_sex);
+                }
             }
         }
     }
