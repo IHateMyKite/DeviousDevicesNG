@@ -15,14 +15,58 @@ namespace DeviousDevices
             sHidden = 1
         };
 
-        void HideArmNodes(RE::Actor* a_actor,std::unordered_map<uint32_t,HidderState>& a_states,std::vector<std::string> a_nodes);
-        void ShowArmNodes(RE::Actor* a_actor,std::unordered_map<uint32_t,HidderState>& a_states,std::vector<std::string> a_nodes);
-        void UpdateArms(RE::Actor* a_actor);
+        struct NodeKey
+        {
+            RE::BSFixedString nodeName;
+            bool firstPerson;
+        };
+
+        struct NodeKeyCompare
+        {
+            bool operator()(const NodeKey& lhs, const NodeKey& rhs) const
+            {
+                return (lhs.firstPerson < rhs.firstPerson) && (lhs.nodeName.front() < rhs.nodeName.front());
+            }
+        };
+
+        struct HiddenNode
+        {
+            HiddenNode(RE::NiNode* a_node) :
+                nodeName(a_node->name),
+                prevScale(a_node->local.scale) {}
+            RE::BSFixedString nodeName;
+            float prevScale;
+        };
+
+        using HiddenNodes = std::map<NodeKey, HiddenNode, NodeKeyCompare>;
+
+        struct ActorState
+        {
+            ActorState(RE::Actor* a_actor)
+            {
+                actorHandle = a_actor->GetHandle();
+            }
+            ~ActorState();
+
+            RE::ActorHandle actorHandle;
+            HiddenNodes hiddenNodes;
+            HidderState armState;
+            HidderState handState;
+            HidderState fingerState;
+            HidderState weaponState;
+            UpdateHandle updateHandle;
+        };
+
+        std::shared_ptr<ActorState> GetActorState(RE::Actor* a_actor);
+
+        void HideArmNodes(RE::Actor* a_actor,HidderState& a_state,HiddenNodes& a_hidden,std::vector<std::string> a_nodes);
+        void ShowArmNodes(RE::Actor* a_actor,HidderState& a_state,HiddenNodes& a_hidden,std::vector<std::string> a_nodes);
+        void UpdateArms(RE::Actor* a_actor,ActorState& a_state);
 
         //https://wiki.beyondskyrim.org/wiki/Arcane_University:Nifskope_Weapons_Setup
-        void HideWeapons(RE::Actor* a_actor);
-        void ShowWeapons(RE::Actor* a_actor);
-        void UpdateWeapons(RE::Actor* a_actor);
+        void HideWeapons(RE::Actor* a_actor,ActorState& a_state);
+        void ShowWeapons(RE::Actor* a_actor,ActorState& a_state);
+        void UpdateWeapons(RE::Actor* a_actor,ActorState& a_state);
         void UpdatePlayer(RE::Actor* a_actor);
         void Setup();
         //void Update();
@@ -36,8 +80,8 @@ namespace DeviousDevices
     protected:
         bool ActorIsValid(RE::Actor* a_actor) const;
         bool ShouldHideWeapons(RE::Actor* a_actor) const;
-        bool AddHideNode(RE::Actor* a_actor, std::string a_nodename);
-        bool RemoveHideNode(RE::Actor* a_actor, std::string a_nodename);
+        bool AddHideNode(RE::Actor* a_actor, HiddenNodes& a_hidden, std::string a_nodename);
+        bool RemoveHideNode(RE::Actor* a_actor, HiddenNodes& a_hidden, std::string a_nodename);
     private:
         bool _installed = false;
         std::vector<uint32_t>       _lastupdatestack;
@@ -45,27 +89,25 @@ namespace DeviousDevices
         std::vector<std::string>    _ArmNodes;
         std::vector<std::string>    _HandNodes;
         std::vector<std::string>    _FingerNodes;
-        std::unordered_map<uint32_t,HidderState> _armhiddenstates;    //temporary array with state of arm nodes on updated actors
-        std::unordered_map<uint32_t,HidderState> _handhiddenstates;   //temporary array with state of hand nodes on updated actors
-        std::unordered_map<uint32_t,HidderState> _fingerhiddenstates; //temporary array with state of finger nodes on updated actors
-        std::unordered_map<uint32_t,HidderState> _weaponhiddenstates; //temporary array with state of weapon nodes on updated actors
-        std::unordered_map<uint32_t,std::unordered_map<std::string,HidderState>> _weaponnodestates; //temporary array with states of weapon nodes on updated actors
+        std::unordered_map<uint32_t, std::shared_ptr<ActorState>> _ActorStates;
         uint64_t                    _UpdateCounter = 0UL;
-        std::unordered_map<RE::Actor*,UpdateHandle> _UpdatedActors;
         std::vector<std::string>    _ArmHiddingKeywords;
         std::vector<std::string>    _HandHiddingKeywords;
         std::vector<std::string>    _FingerHiddingKeywords;
+        bool                        _HideFirstPerson;
     };
 
     inline void HideWeapons(PAPYRUSFUNCHANDLE, RE::Actor* a_actor) {
         LOG("HideWeapons called")
-        UniqueLock lock(NodeHider::GetSingleton()->SaveLock);
-        NodeHider::GetSingleton()->HideWeapons(a_actor);
+        UniqueLock lock( NodeHider::GetSingleton()->SaveLock);
+        auto loc_state = NodeHider::GetSingleton()->GetActorState(a_actor);
+        NodeHider::GetSingleton()->HideWeapons(a_actor, *loc_state);
     }
 
     inline void ShowWeapons(PAPYRUSFUNCHANDLE, RE::Actor* a_actor) {
         LOG("ShowWeapons called")
         UniqueLock lock(NodeHider::GetSingleton()->SaveLock);
-        NodeHider::GetSingleton()->ShowWeapons(a_actor);
+        auto loc_state = NodeHider::GetSingleton()->GetActorState(a_actor);
+        NodeHider::GetSingleton()->ShowWeapons(a_actor, *loc_state);
     }
 }

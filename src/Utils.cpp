@@ -57,3 +57,8 @@ void DeviousDevices::Utils::ForEachActorInRange(float a_range, std::function<voi
         }
     }
 }
+
+RE::NiNode* DeviousDevices::Utils::NodeByName(RE::NiAVObject* a_root, const RE::BSFixedString& a_name) {
+    const auto obj = a_root ? a_root->GetObjectByName(a_name) : nullptr;
+    return obj ? obj->AsNode() : nullptr;
+}

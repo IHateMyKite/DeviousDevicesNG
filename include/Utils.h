@@ -9,6 +9,8 @@ namespace DeviousDevices {
 
         void ForEachActorInRange(float a_range,
                                     std::function<void(RE::Actor* a_actor)> callback);
+
+        RE::NiNode* NodeByName(RE::NiAVObject* a_root, const RE::BSFixedString& a_node);
     }  // namespace Utils
 
     class Spinlock
