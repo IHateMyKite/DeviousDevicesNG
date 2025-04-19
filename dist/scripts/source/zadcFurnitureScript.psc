@@ -11,6 +11,7 @@ Need to make sure in DDI that NPCs can't unlock/equip invalid devices. Best to f
 
 zadclibs Property clib Auto
 zadlibs Property libs Auto
+zadcNGEscapeMinigame Property zadcNGEscapeMinigameQuest Auto
 
 String Property DeviceName = "" Auto					; Device name for use in messageboxes etc.
 Bool Property ForceStripActor = True Auto				; If enabled, the actor will be automatically stripped naked when put in the device. Their outfit will be restored upon leaving.
@@ -361,7 +362,10 @@ Function UnlockActor()
 		If user == Game.GetPlayer()			
 			Game.SetPlayerAIDriven(False)
 			Game.EnablePlayerControls()	
-			user.RemoveItem(clib.zadc_NoWaitItem, user.GetItemCount(clib.zadc_NoWaitItem), abSilent = True)			
+			user.RemoveItem(clib.zadc_NoWaitItem, user.GetItemCount(clib.zadc_NoWaitItem), abSilent = True)
+			if zadcNGEscapeMinigameQuest.IsRunning()
+				zadcNGEscapeMinigameQuest.Stop()
+			EndIf
 		Else
 			user.SetDontMove(False)	
 			user.SetHeadTracking(True)
@@ -802,9 +806,13 @@ Event OnUpdate()
 		if StruggleTick > 1
 			StruggleTick = 0
 		EndIf	
-		RegisterForSingleUpdate(Utility.RandomInt(20,40))	
+		RegisterForSingleUpdate(Utility.RandomInt(20,40))
+		; Don't run random struggle while passerby action is running.
 		If !PasserbyAction() && StruggleTick == 0
-			StruggleScene(user)
+			; Don't run random struggle if user is already doing struggle minigame (player only).
+			If user != libs.PlayerRef || !zadcNGEscapeMinigameQuest.IsRunning() || zadcNGEscapeMinigameQuest.IsSuspended()
+				StruggleScene(user)
+			EndIf
 		EndIf
 		if !clib.IsAnimating(user)
 			; to make up for not checking here, we do when a scene ends.
@@ -951,10 +959,11 @@ EndFunction
 
 ; ESCAPE SYSTEM
 
-Function EscapeAttempt()		
-	Int EscapeOption = zadc_EscapeDeviceMSG.show()	
+Function EscapeAttempt()
+	Int EscapeOption = zadc_EscapeDeviceMSG.show()
 	If EscapeOption == 0 ; Struggle
-		EscapeAttemptStruggle()
+		EscapeAttemptMinigame()
+		;EscapeAttemptStruggle()
 	Elseif EscapeOption == 1 ; Pick Lock
 		EscapeAttemptLockPick()
 	Elseif EscapeOption == 2 ; Break Device
@@ -984,7 +993,7 @@ Function StruggleScene(actor akActor)
 	; set a mutex in case the scene gets called while it's still running
 	If strugglemutex || !akActor.Is3DLoaded() || akActor.GetParentCell() != Libs.PlayerRef.GetParentCell() || clib.IsAnimating(akActor)
 		return
-	EndIf		
+	EndIf
 	strugglemutex = true	
 	CurrentStruggle	= PickRandomStruggle()		
 	If !CurrentStruggle
@@ -1220,6 +1229,14 @@ Function SelfBondageReward()
 	Utility.Wait(1)
 EndFunction
 
+Function EscapeAttemptMinigame()
+	if !zadcNGEscapeMinigameQuest.IsRunning()
+		zadcNGEscapeMinigameQuest.Start()
+	ElseIf zadcNGEscapeMinigameQuest.IsSuspended()
+		zadcNGEscapeMinigameQuest.ResumeMinigame()
+	EndIf
+EndFunction
+
 Function EscapeAttemptStruggle()
 	If !CanMakeStruggleEscapeAttempt()
 		return
@@ -1287,10 +1304,16 @@ Float Function CalclulateStruggleSuccess()
 	return result
 EndFunction
 
-Function EscapeAttemptBreak()			
+Function EscapeAttemptBreak()
 	If !CanMakeBreakEscapeAttempt()
 		return
-	EndIf		
+	EndIf
+
+	; Suspend the minigame while lockpick escape runs. It'll resume next time player picks "struggle".
+	if zadcNGEscapeMinigameQuest.IsRunning() && !zadcNGEscapeMinigameQuest.IsSuspended()
+		zadcNGEscapeMinigameQuest.SuspendMinigame()
+	EndIf
+
 	zadc_EscapeBreakMSG.Show()		
 	If Escape(CalclulateBreakSuccess())		
 		zadc_EscapeBreakSuccessMSG.Show()	
@@ -1347,23 +1370,29 @@ Float Function CalclulateBreakSuccess()
 	return result
 EndFunction
 
-Function EscapeAttemptLockPick()	
+Function EscapeAttemptLockPick()
 	If !HasValidLockPick()
 		libs.notify("You do not possess a pick you could use on the " + DeviceName + ".", messageBox = true)
 		return
 	EndIf	
 	If !CanMakeLockPickEscapeAttempt()
 		return
-	EndIf	
-	zadc_EscapeLockPickMSG.Show()	
+	EndIf
+	zadc_EscapeLockPickMSG.Show()
 	; first make a check against lock difficulty as you can't pick what you can't reach! The cooldown timer has already reset at this point.
 	If Utility.RandomFloat(0.0, 99.9) < LockAccessDifficulty && User == libs.PlayerRef
 		libs.notify("You fail to reach your " + DeviceName + "'s locks and can't attempt to pick the lock.", messageBox = true)		
 		return
-	EndIf	
-	If Escape(CalclulateLockPickSuccess())		
-		zadc_EscapeLockPickSuccessMSG.Show()	
-		SelfBondageReward()		
+	EndIf
+
+	; Suspend the minigame while lockpick escape runs. It'll resume next time player picks "struggle".
+	if zadcNGEscapeMinigameQuest.IsRunning() && !zadcNGEscapeMinigameQuest.IsSuspended()
+		zadcNGEscapeMinigameQuest.SuspendMinigame()
+	EndIf
+
+	If Escape(CalclulateLockPickSuccess())
+		zadc_EscapeLockPickSuccessMSG.Show()
+		SelfBondageReward()
 		UnlockActor()
 	Else
 		; catastrophic failure will prevent further escape attempts
@@ -1375,7 +1404,7 @@ Function EscapeAttemptLockPick()
 			EscapeLockPickAttemptsMade += 1
 			; destroy the lockpick
 			DestroyLockPick()			
-			zadc_EscapeLockPickFailureMSG.Show()			
+			zadc_EscapeLockPickFailureMSG.Show()
 		Endif
 	EndIf
 EndFunction
