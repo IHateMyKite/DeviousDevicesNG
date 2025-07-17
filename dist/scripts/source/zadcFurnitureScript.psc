@@ -317,8 +317,8 @@ Function LockActor(actor act)
 	If act == libs.PlayerRef
 		Game.DisablePlayerControls(abMovement = true, abFighting = true, abSneaking = true, abMenu = true,	abActivate = false, abCamSwitch = false, abLooking = false, abJournalTabs = true)		
 		; if it's the player, we need to make sure she can try to escape
-		UnregisterForAllKeys()	
-		RegisterForKey(Input.GetMappedKey("Activate", 0))		
+		UnregisterForAllControls()	
+		RegisterForControl("Activate")
 		If PreventWaitandSleep
 			act.EquipItem(clib.zadc_NoWaitItem, True, True)
 		EndIf
@@ -363,8 +363,8 @@ Function UnlockActor()
 	UnlockMutex = True
 	self.enable()
 	UnregisterForUpdate()
-	UnregisterForAllKeys()	
-	user.StopTranslation()
+        UnregisterForAllControls()
+        user.StopTranslation()
 	ActorUtil.RemovePackageOverride(user, CurrentStruggle)
 	ActorUtil.RemovePackageOverride(user, CurrentPose)		
 	Debug.SendAnimationEvent(User, "IdleForceDefaultState")				
@@ -416,14 +416,14 @@ Function UnlockActor()
 	UnlockMutex = False
 EndFunction
 
-Event OnKeyDown(Int KeyCode)	
+Event OnControlDown(string control)
 	If UI.IsMenuOpen("Console") || UI.IsMenuOpen("Console Native UI Menu")
 		Return
 	EndIf	
-	If (KeyCode == Input.GetMappedKey("Activate", 0)) 				
+	If control == "Activate"
 		self.Activate(libs.PlayerRef)
 	Endif	
-EndEvent	
+EndEvent
 
 Bool Function CanMakeUnlockAttempt()
 	; check if the character can make an unlock attempt.
