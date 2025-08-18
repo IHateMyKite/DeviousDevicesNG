@@ -24,8 +24,6 @@ import zadprebuildedexpressions
 slaUtilScr Property Aroused Auto
 zadConfig Property Config Auto
 zadNPCQuestScript Property zadNPCQuest Auto
-zadArmbinderQuestScript Property abq Auto
-zadYokeQuestScript Property ybq Auto
 zadEventSlots Property EventSlots Auto ; See zadBaseEvent.psc for how to use the new events system.
 zadDevicesUnderneathScript Property DevicesUnderneath Auto
 Quest Property zadNPCSlots Auto

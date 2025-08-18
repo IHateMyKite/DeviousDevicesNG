@@ -60,7 +60,6 @@ function LoadAnimations()
 	;------------------------
 	; WOODEN HORSE ANIMATIONS
 	;------------------------
-	SexLab.GetSetAnimationObject("DDC_B_WHorse_ForGrind", "CreateDDC_B_WHorse_ForGrind", clib)
 	SexLab.GetSetAnimationObject("DDC_PsycheWoodenHorse", "CreateDDC_PsycheWoodenHorse", clib)
 
 	;------------------------

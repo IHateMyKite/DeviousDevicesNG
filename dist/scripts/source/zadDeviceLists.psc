@@ -106,6 +106,18 @@ LeveledItem Property zad_dev_suits_straitjackets_single_leather Auto
 LeveledItem Property zad_dev_suits_straitjackets_single_ebonite Auto
 LeveledItem Property zad_dev_wristshackles Auto
 LeveledItem Property zad_dev_yokes Auto
+LeveledItem Property zad_dev_bitgag_pony Auto
+LeveledItem Property zad_dev_bitgag_pony_ebonite Auto
+LeveledItem Property zad_dev_bitgag_pony_leather Auto
+LeveledItem Property zad_dev_harness_pony Auto
+LeveledItem Property zad_dev_harness_pony_ebonite Auto
+LeveledItem Property zad_dev_harness_pony_leather Auto
+LeveledItem Property zad_dev_tails_pony Auto
+LeveledItem Property zad_dev_corsets_chastity Auto
+LeveledItem Property zad_dev_corsets_regular Auto
+LeveledItem Property zad_dev_mittens Auto
+LeveledItem Property zad_dev_mittens_ebonite Auto
+LeveledItem Property zad_dev_mittens_leather Auto
 
 ; This function retrieves a random device from a given list (see above).
 ; If you want to equip a random item on an actor (most common use case), use EquipRandomDevice() instead.
