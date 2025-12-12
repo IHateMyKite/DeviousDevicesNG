@@ -1115,7 +1115,7 @@ Function Logic(int threadID, bool HasPlayer)
 		libs.Log("Overriding animations.")
 		Controller.SetForcedAnimations(anims)
 		;sort actors into the proper positions, in other words: the bound actor gets fucked
-		If !libs.NeedsBoundAnim(originalActors[0])
+		If !libs.NeedsBoundAnim(originalActors[0]) && originalActors.length > 1
 			Actor tmp = originalActors[0]
 			originalActors[0] = originalActors[1]
 			originalActors[1] = tmp
