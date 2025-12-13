@@ -11,6 +11,9 @@ Armor Property zad_DeviceHider Auto
 zadGagVoices Property Voices Auto
 int[] voiceslots
 
+Keyword Property ArmorJewelry  Auto
+Keyword Property SexLabNoStrip  Auto
+
 Function InitGagSpeak(bool firsttime)
     Utility.Wait(2.0)
     If firsttime
@@ -87,6 +90,7 @@ Event OnPlayerLoadGame()
     endif
     Game.UpdateHairColor()
     RegisterEvents()
+	RegisterForMenu("MapMenu")
     InitGagSpeak(false)
 EndEvent
 
@@ -214,7 +218,6 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
     ;Endif
 EndEvent
  
- 
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
     actor akActor = libs.PlayerRef
     if akBaseObject as Armor
@@ -229,6 +232,15 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
         EndIf
     EndIf    
 EndEvent
-Keyword Property ArmorJewelry  Auto
 
-Keyword Property SexLabNoStrip  Auto
+Event OnMenuOpen(String MenuName)
+	If libs.config.BlindfoldBlockMapUse && MenuName == "MapMenu" && libs.PlayerRef.WornHasKeyword(libs.zad_DeviousBlindfold)
+        ; Tiny wait, then disable abMenu player controls, which will close the map menu.
+		Utility.WaitMenuMode(0.05)
+		Game.DisablePlayerControls(false, false, false, false, false, true, false, false)
+        ; Another tiny wait, then re-enable the menu control.
+		Utility.WaitMenuMode(0.05)
+		Game.EnablePlayerControls(false, false, false, false, false, true, false, false)
+        libs.Notify("The blindfold you are wearing prevents you from reading your map.")
+	EndIf
+EndEvent
