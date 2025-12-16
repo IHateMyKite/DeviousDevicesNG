@@ -964,7 +964,7 @@ Function Logic(int threadID, bool HasPlayer)
 	;restraints will always be hidden if they are in the way of the selected animation
 	If !libs.config.useAnimFilter
 		Bool oral = previousAnim.HasTag("Oral")
-		Bool vaginal = previousAnim.HasTag("Vaginal")
+		Bool vaginal = previousAnim.HasTag("Vaginal") || previousAnim.HasTag("Pussy")
 		Bool anal = previousAnim.HasTag("Anal")
 		libs.Log("oral = " + oral + " - vaginal = " + vaginal + " anal = " + anal)
 		
@@ -1072,7 +1072,7 @@ Function Logic(int threadID, bool HasPlayer)
 		
 		;If the animation does not conflict with any worn restraints, then don't change the animation.
 		;inlined the now-deprecated IsValidAnimation function in a reduced form
-		If ( (permitBoobs || !previousAnim.HasTag("Boobjob")) && (permitVaginal || !previousAnim.HasTag("Vaginal")) && (permitAnal || !previousAnim.HasTag("Anal")) && (permitOral || !previousAnim.HasTag("Oral")) && (noBindings || (noPetSuit && !previousAnim.HasTag("Handjob"))))
+		If ( (permitBoobs || !previousAnim.HasTag("Boobjob")) && (permitVaginal || !(previousAnim.HasTag("Vaginal")||previousAnim.HasTag("Pussy"))) && (permitAnal || !previousAnim.HasTag("Anal")) && (permitOral || !previousAnim.HasTag("Oral")) && (noBindings || (noPetSuit && !previousAnim.HasTag("Handjob"))))
 			libs.Log("Original animation " + previousAnim.name + " does not conflict, returning.")
 			Return
 		EndIf
