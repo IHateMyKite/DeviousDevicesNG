@@ -34,8 +34,10 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
         if SceneActors[i].WornHasKeyword(libs.zad_DeviousGag)
 			If SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 1 ;p+ fix
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Female,Gagged", "", True))
+				libs.SexLab.OpenMouth(SceneActors[i])
 			ElseIf SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 0 ;p+ fix
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Male,Gagged", "", True))
+				libs.SexLab.OpenMouth(SceneActors[i])
 			else ;regular SL way of switching voices
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceBySlot(voiceslots[SceneActors[i].GetActorBase().GetSex()]))
 			endif
