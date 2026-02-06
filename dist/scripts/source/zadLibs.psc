@@ -2416,6 +2416,20 @@ String Function AnimSwitchKeyword( actor akActor, string idleName )
 EndFunction
 
 Function RepopulateNpcs()
+	; ---- SAFETY GUARD ----
+	if !PlayerRef || !PlayerRef.Is3DLoaded()
+		Log("RepopulateNpcs(): Player not fully loaded, aborting.")
+		return
+	EndIf
+	if Utility.IsInMenuMode()
+		Log("RepopulateNpcs(): In menu mode, aborting.")
+		return
+	EndIf
+	if Utility.GetCurrentRealTime() - lastRepopulateTime < 10
+		Log("RepopulateNpcs(): Skipping due to recent cell change.")
+		return
+	EndIf
+	; ---- Safety Guard against potential VM Lockups on cell change ----
 	if repopulateMutex ; Avoid this getting hit too quickly while comparing times.
 		Log("RepopulateNpcs() is already processing.")
 		return
