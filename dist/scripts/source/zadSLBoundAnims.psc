@@ -23,9 +23,12 @@ function LoadAnimations()
 	;-------------------
 	;blowjob
 	SexLab.GetSetAnimationObject("DD_B_PS_DT", "CreateDD_B_PS_DT", filterQuest)
+	SexLab.GetSetAnimationObject("DD_BPPetSuitBJ", "CreateDD_BPPetSuitBJ", filterQuest)
 	;vaginal
 	SexLab.GetSetAnimationObject("DD_B_PS_Doggy", "CreateDD_B_PS_Doggy", filterQuest)
 	SexLab.GetSetAnimationObject("DD_B_PS_Miss", "CreateDD_B_PS_Miss", filterQuest)
+	SexLab.GetSetAnimationObject("DD_BPPetSuit", "CreateDD_BPPetSuit", filterQuest)
+	SexLab.GetSetAnimationObject("DD_BPPetSuitRCG", "CreateDD_BPPetSuitRCG", filterQuest)
 	;anal
 	SexLab.GetSetAnimationObject("DD_B_PS_DoggyA", "CreateDD_B_PS_DoggyA", filterQuest)
 EndFunction
@@ -183,6 +186,128 @@ Function CreateDD_B_PS_Miss(int id)
 		Anim.AddPositionStage(a2, asAnim1 + "_A2_S5")
 		
 		Anim.AddTag("Laying")
+		Anim.AddTag("Vaginal")		
+		Anim.AddTag("Aggressive")
+
+		Anim.AddTag("Sex")
+		Anim.AddTag("MF")
+
+		Anim.AddTag("DomSub")
+		Anim.AddTag("PetSuit")
+		Anim.AddTag("DeviousDevice")
+		Anim.AddTag("NoSwap")
+
+		Anim.Save(-1)
+		filterQuest.PetSuitVaginal = PapyrusUtil.PushString(filterQuest.PetSuitVaginal, Anim.Name)
+	EndIf
+EndFunction
+
+;animations by BREADPIG
+
+Function CreateDD_BPPetSuitBJ(int id)
+	String asAnim1 = "DD_BPPetSuitBJ"
+
+	libs.Log("Creating DD_BPPetSuitBJ")
+	sslBaseAnimation Anim = SexLab.GetAnimationObject("DD_BPPetSuitBJ")
+	if Anim != none && Anim.Name != "DD_BPPetSuitBJ"
+		Anim.Name = "DD_BPPetSuitBJ"
+		Anim.SoundFX = Sucking
+
+		Int a1 = Anim.AddPosition(Female, addCum = Oral)
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S1", silent = True)
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S2", silent = True, openMouth = True)
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S3", silent = True, openMouth = True)
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S4", silent = True, openMouth = True)
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S5", silent = True, openMouth = True)
+		
+		Int a2 = Anim.AddPosition(Male)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S1")
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S2")
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S3")
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S4")
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S5")
+		
+		Anim.SetStageSoundFX(1, None)
+		
+		Anim.AddTag("Blowjob")	
+		Anim.AddTag("Oral")
+		Anim.AddTag("Aggressive")
+
+		Anim.AddTag("Sex")
+		Anim.AddTag("MF")
+
+		Anim.AddTag("DomSub")
+		Anim.AddTag("PetSuit")
+		Anim.AddTag("DeviousDevice")
+		Anim.AddTag("NoSwap")
+
+		Anim.Save(-1)
+		filterQuest.PetSuitBlowjob = PapyrusUtil.PushString(filterQuest.PetSuitBlowjob, Anim.Name)
+	EndIf
+EndFunction
+
+Function CreateDD_BPPetSuit(int id)
+	String asAnim1 = "DD_BPPetSuit"
+
+	libs.Log("Creating DD_BPPetSuit")
+	sslBaseAnimation Anim = SexLab.GetAnimationObject("DD_BPPetSuit")
+	if Anim != none && Anim.Name != "DD_BPPetSuit"
+		Anim.Name = "DD_BPPetSuit"
+		Anim.SoundFX = Squishing
+
+		Int a1 = Anim.AddPosition(Female, addCum = Vaginal)
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S1")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S2")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S3")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S4")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S5")
+		
+		Int a2 = Anim.AddPosition(Male)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S1", silent = true, sos = 3)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S2", sos = 3)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S3", sos = 3)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S4", sos = 3)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S5", sos = 3)
+		
+		Anim.AddTag("Vaginal")		
+		Anim.AddTag("Aggressive")
+
+		Anim.AddTag("Sex")
+		Anim.AddTag("MF")
+
+		Anim.AddTag("DomSub")
+		Anim.AddTag("PetSuit")
+		Anim.AddTag("DeviousDevice")
+		Anim.AddTag("NoSwap")
+
+		Anim.Save(-1)
+		filterQuest.PetSuitVaginal = PapyrusUtil.PushString(filterQuest.PetSuitVaginal, Anim.Name)
+	EndIf
+EndFunction
+
+Function CreateDD_BPPetSuitRCG(int id)
+	String asAnim1 = "DD_BPPetSuitRCG"
+
+	libs.Log("Creating DD_BPPetSuitRCG")
+	sslBaseAnimation Anim = SexLab.GetAnimationObject("DD_BPPetSuitRCG")
+	if Anim != none && Anim.Name != "DD_BPPetSuitRCG"
+		Anim.Name = "DD_BPPetSuitRCG"
+		Anim.SoundFX = Squishing
+
+		Int a1 = Anim.AddPosition(Female, addCum = Vaginal)
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S1")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S2")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S3")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S4")
+		Anim.AddPositionStage(a1, asAnim1 + "_A1_S5")
+		
+		Int a2 = Anim.AddPosition(Male)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S1", sos = 6)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S2", sos = 5)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S3", sos = 5)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S4", sos = 5)
+		Anim.AddPositionStage(a2, asAnim1 + "_A2_S5", sos = 5)
+		
 		Anim.AddTag("Vaginal")		
 		Anim.AddTag("Aggressive")
 
