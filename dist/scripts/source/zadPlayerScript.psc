@@ -11,6 +11,9 @@ Armor Property zad_DeviceHider Auto
 zadGagVoices Property Voices Auto
 int[] voiceslots
 
+Keyword Property ArmorJewelry  Auto
+Keyword Property SexLabNoStrip  Auto
+
 Function InitGagSpeak(bool firsttime)
     Utility.Wait(2.0)
     If firsttime
@@ -31,8 +34,10 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
         if SceneActors[i].WornHasKeyword(libs.zad_DeviousGag)
 			If SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 1 ;p+ fix
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Female,Gagged", "", True))
+				libs.SexLab.OpenMouth(SceneActors[i])
 			ElseIf SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 0 ;p+ fix
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Male,Gagged", "", True))
+				libs.SexLab.OpenMouth(SceneActors[i])
 			else ;regular SL way of switching voices
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceBySlot(voiceslots[SceneActors[i].GetActorBase().GetSex()]))
 			endif
@@ -117,7 +122,7 @@ Event OnPlayerLoadGame()
     endif
     Game.UpdateHairColor()
     RegisterEvents()
-    RegisterKeys()
+	RegisterForMenu("MapMenu")
     InitGagSpeak(false)
 EndEvent
 
@@ -261,6 +266,14 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
     EndIf    
 EndEvent
 
-Keyword Property ArmorJewelry  Auto
-
-Keyword Property SexLabNoStrip  Auto
+Event OnMenuOpen(String MenuName)
+	If libs.config.BlindfoldBlockMapUse && MenuName == "MapMenu" && libs.PlayerRef.WornHasKeyword(libs.zad_DeviousBlindfold)
+        ; Tiny wait, then disable abMenu player controls, which will close the map menu.
+		Utility.WaitMenuMode(0.05)
+		Game.DisablePlayerControls(false, false, false, false, false, true, false, false)
+        ; Another tiny wait, then re-enable the menu control.
+		Utility.WaitMenuMode(0.05)
+		Game.EnablePlayerControls(false, false, false, false, false, true, false, false)
+        libs.Notify("The blindfold you are wearing prevents you from reading your map.")
+	EndIf
+EndEvent

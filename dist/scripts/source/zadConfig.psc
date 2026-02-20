@@ -57,6 +57,7 @@ Bool Property GagTooltip = True Auto Hidden
 Bool Property bootsSlowdownToggle = True Auto Hidden Conditional
 Bool Property mittensDropToggle = True Auto Hidden Conditional
 Int Property HobbleSkirtSpeedDebuff = 50 Auto Hidden 
+Bool Property BlindfoldBlockMapUse = False Auto Hidden
 
 ;Keys
 Int Property FurnitureNPCActionKey = 0xC9 Auto Hidden ; mapped to PgUp key
@@ -290,6 +291,7 @@ Event OnPageReset(String page)
 		AddSliderOptionST("HobbleDressSlowST", "Hobble Dress Slowdown Strength", HobbleSkirtSpeedDebuff, "{0}")
 		AddSliderOptionST("EffectVibrateChanceST", "Spell Cast Vibrate Chance", EffectVibrateChance, "{0}%")
 		AddEmptyOption()
+		AddToggleOptionST("BlindfoldBlockMapUseST", "Blindfolds Block Map Use", BlindfoldBlockMapUse)
 		AddMenuOptionST("BlindfoldModeST", "Blindfold Mode", blindfoldList[blindfoldMode])
 		If blindfoldMode < 3 ;all except dark fog
 			AddSliderOptionST("BlindfoldStrengthST", "Blindfold Effect Strength", blindfoldStrength, "{2}")
@@ -716,6 +718,20 @@ State ShowMinigameTutorialST
 	EndEvent
 	Event OnHighlightST()
 		SetInfoText("Whether or not tutorial messages are shown at the start of the contraption struggle escape minigame.")
+	EndEvent
+EndState
+
+State BlindfoldBlockMapUseST
+	Event OnSelectST()
+		BlindfoldBlockMapUse = !BlindfoldBlockMapUse
+		SetToggleOptionValueST(BlindfoldBlockMapUse)
+	EndEvent
+	Event OnDefaultST()
+		BlindfoldBlockMapUse = False
+		SetToggleOptionValueST(BlindfoldBlockMapUse)
+	EndEvent
+	Event OnHighlightST()
+		SetInfoText("When enabled, prevents the player from using the map while having a blindfold equipped.")
 	EndEvent
 EndState
 
