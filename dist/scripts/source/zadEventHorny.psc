@@ -28,12 +28,16 @@ bool Function HasKeywords(actor akActor)
 EndFunction
 
 Function Execute(actor akActor)
-	if akActor == libs.PlayerRef
+	bool actorIsPlayer = (akActor == libs.PlayerRef)
+	if actorIsPlayer
 		libs.NotifyPlayer("You absent-mindedly allow your hands to wander...")
 	EndIf
-	; don't play the animation in combat
-	If akActor == libs.playerref && libs.playerref.IsInCombat() 
+	; don't play the animation in combat, or for actors in contraptions
+	If (actorIsPlayer && libs.playerref.IsInCombat()) || libs.config.clibs.GetDevice(akActor)
 		return 
 	Endif
 	libs.PlayThirdPersonAnimation(akActor, libs.AnimSwitchKeyword(akActor, "Horny"), Utility.RandomInt(5,10), permitRestrictive=true)
+	if actorIsPlayer
+		libs.UpdateControls() ; Update controls to allow animation to be cancelled out of by jumping, making it less annoying.
+	EndIf
 EndFunction

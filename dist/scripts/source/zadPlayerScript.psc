@@ -11,9 +11,6 @@ Armor Property zad_DeviceHider Auto
 zadGagVoices Property Voices Auto
 int[] voiceslots
 
-Keyword Property ArmorJewelry  Auto
-Keyword Property SexLabNoStrip  Auto
-
 Function InitGagSpeak(bool firsttime)
     Utility.Wait(2.0)
     If firsttime
@@ -34,10 +31,8 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
         if SceneActors[i].WornHasKeyword(libs.zad_DeviousGag)
 			If SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 1 ;p+ fix
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Female,Gagged", "", True))
-				libs.SexLab.OpenMouth(SceneActors[i])
 			ElseIf SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 0 ;p+ fix
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Male,Gagged", "", True))
-				libs.SexLab.OpenMouth(SceneActors[i])
 			else ;regular SL way of switching voices
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceBySlot(voiceslots[SceneActors[i].GetActorBase().GetSex()]))
 			endif
@@ -57,10 +52,40 @@ Event RegisterGagSound(string eventName, string argString, float argNum, form se
     EndIf
 EndEvent
 
-function RegisterEvents()
+Event OnRequestVibration(form akActor, int vibStrength, int duration, bool teaseOnly, bool silent, Bool AllowActorInScene)
+	libs.VibrateEffectV2(akActor as Actor, vibStrength, duration, teaseOnly, silent, AllowActorInScene)
+EndEvent
+
+function RegisterEvents() 
     RegisterForModEvent("AnimationStart", "OnAnimationStart")
     RegisterForModEvent("GagSoundsRegistered", "RegisterGagSound")
+	RegisterForModEvent("DDNG_RequestVibration", "OnRequestVibration")
 EndFunction
+
+Function RegisterKeys()
+    UnregisterForAllKeys() ; In case keys were remapped, we don't want to stay registered for the old keys.
+
+    ; Register key used for canceling animations. We use RegisterForKey because
+    ; OnControlDown doesn't trigger if controls are disabled, which they are for anims.
+    RegisterForKey(Input.GetMappedKey("Jump", 0))
+    RegisterForKey(Input.GetMappedKey("Jump", 2))
+EndFunction
+
+Event OnKeyDown(int keyCode)
+    ; Animation cancel
+    if keyCode == Input.GetMappedKey("Jump", 0) || keyCode == Input.GetMappedKey("Jump", 2)
+        If libs.PlayerIsInCancellableAnimation
+            ; the correct pre-anim camera state is usually local to the function starting the animation, so it's hard to get.
+            ; I'll just use this for now. It won't properly restore first person, but that's really a big deal.
+            bool[] camState = new bool[2]
+            libs.EndThirdPersonAnimation(libs.PlayerRef, camState)
+            libs.PlayerIsInCancellableAnimation = false
+        EndIf
+    Else
+        ; This can only happen if a registered key was remapped. If so, we should re-register.
+        RegisterKeys()
+    EndIf
+EndEvent
 
 event OnInit()
     RegisterForSingleUpdate(5.0)
@@ -92,7 +117,7 @@ Event OnPlayerLoadGame()
     endif
     Game.UpdateHairColor()
     RegisterEvents()
-	RegisterForMenu("MapMenu")
+    RegisterKeys()
     InitGagSpeak(false)
 EndEvent
 
@@ -220,6 +245,7 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
     ;Endif
 EndEvent
  
+ 
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
     actor akActor = libs.PlayerRef
     if akBaseObject as Armor
@@ -235,14 +261,6 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
     EndIf    
 EndEvent
 
-Event OnMenuOpen(String MenuName)
-	If libs.config.BlindfoldBlockMapUse && MenuName == "MapMenu" && libs.PlayerRef.WornHasKeyword(libs.zad_DeviousBlindfold)
-        ; Tiny wait, then disable abMenu player controls, which will close the map menu.
-		Utility.WaitMenuMode(0.05)
-		Game.DisablePlayerControls(false, false, false, false, false, true, false, false)
-        ; Another tiny wait, then re-enable the menu control.
-		Utility.WaitMenuMode(0.05)
-		Game.EnablePlayerControls(false, false, false, false, false, true, false, false)
-        libs.Notify("The blindfold you are wearing prevents you from reading your map.")
-	EndIf
-EndEvent
+Keyword Property ArmorJewelry  Auto
+
+Keyword Property SexLabNoStrip  Auto
