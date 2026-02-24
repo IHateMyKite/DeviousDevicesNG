@@ -1,0 +1,34 @@
+{
+  "conditions": [
+    "WornHasKeyword zadNG_PAR_PostureCollar == 1 AND",
+    "GetInFaction SexLabAnimatingFaction == 0 AND",
+    "GetInFaction OStimAnyOralActorFaction == 0 AND"
+  ],
+  "rotate": true,
+  "translate": false,
+  "scale": false,
+  "frames": [],
+  "limits": [
+    {
+      "name": "NPC Head [Head]",
+      "rotate_low": [-20, -10, -27],
+      "rotate_high": [20, 10, 27],
+      "translate_low": [0, 0, 0],
+      "translate_high": [0, 0, 0],
+      "scale_low": 0,
+      "scale_high": 0
+    },
+    {
+      "name": "NPC Neck [Neck]",
+      "rotate_low": [-20, -5, -20],
+      "rotate_high": [20, 15, 20],
+      "translate_low": [0, 0, 0],
+      "translate_high": [0, 0, 0],
+      "scale_low": 0,
+      "scale_high": 0
+    }
+  ],
+  
+  "priority": 943394426,
+  "refs": {}
+}
