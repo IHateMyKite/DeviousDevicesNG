@@ -605,7 +605,7 @@ EndFunction
 String Function getSuppressString(bool permitOral, bool permitVaginal, bool permitAnal, bool permitBoobs, bool NoBindings, string suppresstag = "")	
 	String supr = suppresstag
 	If !permitVaginal    
-		supr = "Vaginal," + supr
+		supr = "Vaginal,Pussy," + supr
 	EndIf
 	If !permitAnal
 		supr = "Anal," + supr
@@ -964,7 +964,7 @@ Function Logic(int threadID, bool HasPlayer)
 	;restraints will always be hidden if they are in the way of the selected animation
 	If !libs.config.useAnimFilter
 		Bool oral = previousAnim.HasTag("Oral")
-		Bool vaginal = previousAnim.HasTag("Vaginal") || previousAnim.HasTag("Pussy")
+		Bool vaginal = previousAnim.HasOneTag(Utility.CreateStringArray(2, "Vaginal, Pussy"))
 		Bool anal = previousAnim.HasTag("Anal")
 		libs.Log("oral = " + oral + " - vaginal = " + vaginal + " anal = " + anal)
 		
