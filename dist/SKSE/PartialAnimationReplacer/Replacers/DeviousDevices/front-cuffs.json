@@ -1207,5 +1207,5 @@
   "refs": {},
   "rotate": true,
   "scale": false,
-  "translate": false
+  "translate": true
 }
