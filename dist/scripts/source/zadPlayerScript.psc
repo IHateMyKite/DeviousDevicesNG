@@ -57,10 +57,40 @@ Event RegisterGagSound(string eventName, string argString, float argNum, form se
     EndIf
 EndEvent
 
-function RegisterEvents()
+Event OnRequestVibration(form akActor, int vibStrength, int duration, bool teaseOnly, bool silent, Bool AllowActorInScene)
+	libs.VibrateEffectV2(akActor as Actor, vibStrength, duration, teaseOnly, silent, AllowActorInScene)
+EndEvent
+
+function RegisterEvents() 
     RegisterForModEvent("AnimationStart", "OnAnimationStart")
     RegisterForModEvent("GagSoundsRegistered", "RegisterGagSound")
+	RegisterForModEvent("DDNG_RequestVibration", "OnRequestVibration")
 EndFunction
+
+Function RegisterKeys()
+    UnregisterForAllKeys() ; In case keys were remapped, we don't want to stay registered for the old keys.
+
+    ; Register key used for canceling animations. We use RegisterForKey because
+    ; OnControlDown doesn't trigger if controls are disabled, which they are for anims.
+    RegisterForKey(Input.GetMappedKey("Jump", 0))
+    RegisterForKey(Input.GetMappedKey("Jump", 2))
+EndFunction
+
+Event OnKeyDown(int keyCode)
+    ; Animation cancel
+    if keyCode == Input.GetMappedKey("Jump", 0) || keyCode == Input.GetMappedKey("Jump", 2)
+        If libs.PlayerIsInCancellableAnimation
+            ; the correct pre-anim camera state is usually local to the function starting the animation, so it's hard to get.
+            ; I'll just use this for now. It won't properly restore first person, but that's really a big deal.
+            bool[] camState = new bool[2]
+            libs.EndThirdPersonAnimation(libs.PlayerRef, camState)
+            libs.PlayerIsInCancellableAnimation = false
+        EndIf
+    Else
+        ; This can only happen if a registered key was remapped. If so, we should re-register.
+        RegisterKeys()
+    EndIf
+EndEvent
 
 event OnInit()
     RegisterForSingleUpdate(5.0)
@@ -219,6 +249,7 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
     ;    EndWhile
     ;Endif
 EndEvent
+ 
  
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
     actor akActor = libs.PlayerRef

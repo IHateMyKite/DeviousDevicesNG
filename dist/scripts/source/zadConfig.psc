@@ -64,7 +64,7 @@ Int Property FurnitureNPCActionKey = 0xC9 Auto Hidden ; mapped to PgUp key
 
 ;Events and Effects
 Float Property EventInterval = 1.5 Auto Hidden
-Int Property EffectVibrateChance = 25 Auto Hidden
+Int Property EffectVibrateChance = 100 Auto Hidden
 Int Property EffectHealthDrainChance = 50 Auto Hidden
 Int Property EffectManaDrainChance = 50 Auto Hidden
 Int Property EffectStaminaDrainChance = 50 Auto Hidden
@@ -76,8 +76,8 @@ Int Property numNpcs = 15 Auto Hidden Conditional
 ;Sounds
 Float Property VolumeOrgasm = 1.0 Auto Hidden
 Float Property VolumeEdged = 1.0 Auto Hidden
-Float Property VolumeVibrator = 0.5 Auto Hidden
-Float Property VolumeVibratorNPC = 0.25 Auto Hidden
+Float Property VolumeVibrator = 0.75 Auto Hidden
+Float Property VolumeVibratorNPC = 0.5 Auto Hidden
 Int Property RubberSoundMode = 1 Auto Hidden
 Bool Property MuffleTooltip = True Auto Hidden
 Float Property VolumeMuffled = 0.2 Auto Hidden
@@ -289,6 +289,7 @@ Event OnPageReset(String page)
 		AddToggleOptionST("BootsSlowdownST", "Boots Slowdown Effect", bootsSlowdownToggle)
 		AddToggleOptionST("HardcoreMittensST", "Hardcore Bondage Mittens", mittensDropToggle)
 		AddSliderOptionST("HobbleDressSlowST", "Hobble Dress Slowdown Strength", HobbleSkirtSpeedDebuff, "{0}")
+		AddSliderOptionST("EffectVibrateChanceST", "Spell Cast Vibrate Chance", EffectVibrateChance, "{0}%")
 		AddEmptyOption()
 		AddToggleOptionST("BlindfoldBlockMapUseST", "Blindfolds Block Map Use", BlindfoldBlockMapUse)
 		AddMenuOptionST("BlindfoldModeST", "Blindfold Mode", blindfoldList[blindfoldMode])
@@ -1073,7 +1074,7 @@ EndState
 State NPCVibVolST
 	Event OnSliderOpenST()
 		SetSliderDialogStartValue(VolumeVibratorNPC)
-		SetSliderDialogDefaultValue(0.25)
+		SetSliderDialogDefaultValue(0.5)
 		SetSliderDialogRange(0.1, 1.0)
 		SetSliderDialogInterval(0.01)
 	EndEvent
@@ -1082,7 +1083,7 @@ State NPCVibVolST
 		SetSliderOptionValueST(VolumeVibratorNPC, "{3}")
 	EndEvent
 	Event OnDefaultST()
-		VolumeVibratorNPC = 0.25
+		VolumeVibratorNPC = 0.5
 		SetSliderOptionValueST(VolumeVibratorNPC, "{3}")
 	EndEvent
 	Event OnHighlightST()
@@ -1133,7 +1134,7 @@ EndState
 State PlayerVibVolST
 	Event OnSliderOpenST()
 		SetSliderDialogStartValue(VolumeVibrator)
-		SetSliderDialogDefaultValue(0.5)
+		SetSliderDialogDefaultValue(0.75)
 		SetSliderDialogRange(0.1, 1.0)
 		SetSliderDialogInterval(0.01)
 	EndEvent
@@ -1142,11 +1143,31 @@ State PlayerVibVolST
 		SetSliderOptionValueST(VolumeVibrator, "{3}")
 	EndEvent
 	Event OnDefaultST()
-		VolumeVibrator = 0.5
+		VolumeVibrator = 0.75
 		SetSliderOptionValueST(VolumeVibrator, "{3}")
 	EndEvent
 	Event OnHighlightST()
 		SetInfoText("Set how loud the player's vibrators are.\nStronger vibrators are inherently louder than the weaker ones.")
+	EndEvent
+EndState
+
+State EffectVibrateChanceST
+	Event OnSliderOpenST()
+		SetSliderDialogStartValue(EffectVibrateChance)
+		SetSliderDialogDefaultValue(100)
+		SetSliderDialogRange(0, 100)
+		SetSliderDialogInterval(1)
+	EndEvent
+	Event OnSliderAcceptST(Float value)
+		EffectVibrateChance = value as int
+		SetSliderOptionValueST(EffectVibrateChance, "{0}%")
+	EndEvent
+	Event OnDefaultST()
+		EffectVibrateChance = 100
+		SetSliderOptionValueST(EffectVibrateChance, "{0}%")
+	EndEvent
+	Event OnHighlightST()
+		SetInfoText("Set the percentage chance that casting a spell while wearing certain soul gem plugs or piercings will trigger a vibration event.")
 	EndEvent
 EndState
 
@@ -1537,6 +1558,7 @@ Function ExportSettings()
 	ExportInt("blindfoldMode", blindfoldMode)
 	ExportInt("CooldownDifficulty", CooldownDifficulty)
 	ExportInt("darkfogStrength", darkfogStrength)
+	ExportInt("EffectVibrateChance", EffectVibrateChance)
 	ExportInt("DevicesUnderneathSlot", DevicesUnderneathSlot)
 	ExportInt("EscapeDifficulty", EscapeDifficulty)
 	ExportInt("FurnitureNPCActionKey", FurnitureNPCActionKey)
@@ -1614,6 +1636,7 @@ Function ImportSettings()
 	
 	CooldownDifficulty = ImportInt("CooldownDifficulty", CooldownDifficulty)
 	darkfogStrength = ImportInt("darkfogStrength", darkfogStrength)
+	EffectVibrateChance = ImportInt("EffectVibrateChance", EffectVibrateChance)
 	DevicesUnderneathSlot = ImportInt("DevicesUnderneathSlot", DevicesUnderneathSlot)
 	EscapeDifficulty = ImportInt("EscapeDifficulty", EscapeDifficulty)
 	FurnitureNPCActionKey = ImportInt("FurnitureNPCActionKey", FurnitureNPCActionKey)

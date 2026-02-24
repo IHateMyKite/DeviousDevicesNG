@@ -272,6 +272,8 @@ bool Property EnableVRSupport = False Auto
 ; Misc
 Actor Property PlayerRef Auto
 Faction Property SexLabAnimatingFaction Auto
+Faction Property zadNGOrgasmFaction Auto ; Faction to store actors having an orgasm
+Faction Property zadNGEdgedFaction Auto ; Faction to store actors getting edged
 Spell Property ShockEffect Auto
 Float Property SpellCastVibrateCooldown Auto
 Spell Property zad_splMagickaPenalty Auto
@@ -366,6 +368,7 @@ Keyword Property zad_EffectCompressBelly Auto ; Compress belly to avoid hdt clip
 Keyword Property zad_NoCompressBelly Auto ; Disable Compressing of belly, despite previous keyword
 Keyword Property zad_EffectForcedWalk Auto ; Responsible for muting encumberance messages on reload, related to the zadx_ForcedWalk magiceffect
 
+Bool Property PlayerIsInCancellableAnimation = false Auto Hidden ; Flag used to signal that a player animation is allowed to be cancelled by user input
 
 ;===============================================================================
 ; Public Interface Functions
@@ -790,30 +793,32 @@ Function PlayHornyAnimation(actor akActor)
 		return 
 	Endif	
 
-  if EnableVRSupport
-    PlayThirdPersonAnimation(akActor, "DDZazHornyA", 3, permitRestrictive=true)
-  else
-	  PlayThirdPersonAnimation(akActor, "DDZazHornyA", 19, permitRestrictive=true)
-  EndIf
-
+	PlayerIsInCancellableAnimation = true
+	if EnableVRSupport
+	PlayThirdPersonAnimation(akActor, "DDZazHornyA", 3, permitRestrictive=true)
+	else
+		PlayThirdPersonAnimation(akActor, "DDZazHornyA", 19, permitRestrictive=true)
+	EndIf
 EndFunction
 
 ; simpler function without shaky cam stuff and tie-in to vibration effects.
-Function Orgasm(actor akActor)			
+Function Orgasm(actor akActor)
+	akActor.AddToFaction(zadNGOrgasmFaction)
 	int sID = OrgasmSound.Play(akActor)
 	Sound.SetInstanceVolume(sid, Config.VolumeOrgasm)
 	Aroused.SetActorExposure(akActor, 10)
 	Aroused.UpdateActorOrgasmDate(akActor)
+	SendOrgasmEvent(akActor, 10)
 	if !IsAnimating(akActor)
 		bool[] cameraState = StartThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Orgasm"), true)
-    if EnableVRSupport
-		  Utility.Wait(4)
-    else
-      Utility.Wait(20)
-    EndIf
+		if EnableVRSupport
+			Utility.Wait(4)
+		else
+		Utility.Wait(16.5) ; This is set to match the "fall to knees" orgasm animation duration
+		EndIf
 	  EndThirdPersonAnimation(akActor, cameraState, true)
-	Else		
 	EndIf
+	akActor.RemoveFromFaction(zadNGOrgasmFaction)
 EndFunction
 
 Function SendInflationEvent(Actor who, Bool PlugisVaginal, Bool WasInflated, Int PlugState)	
@@ -1178,10 +1183,11 @@ Function EndThirdPersonAnimation(actor akActor, bool[] cameraState, bool permitR
 		if cameraState[0]
 			game.ForceFirstPerson()		
 		EndIf
+		PlayerIsInCancellableAnimation = false
 	Else
 		akActor.SetDontMove(false)
 	EndIf
-	SendDDFunctionEvent ("EndThirdPersonAnimation", akActor)	
+	SendDDFunctionEvent ("EndThirdPersonAnimation", akActor)
 EndFunction
 
 
@@ -1694,6 +1700,7 @@ EndFunction
 ;;;             int vsID=-1, ; Vibrating sound ID. If provided, will stop vibration sound.
 Function ActorOrgasm(actor akActor, int setArousalTo=-1, int vsID=-1)
 	;SendModEvent("DeviceActorOrgasm", akActor.GetLeveledActorBase().GetName())
+	akActor.AddToFaction(zadNGOrgasmFaction)
     SendOrgasmEvent(akActor,setArousalTo)
 	if setArousalTo < 0
 		setArousalTo = Utility.RandomInt(0, 75)
@@ -1702,24 +1709,36 @@ Function ActorOrgasm(actor akActor, int setArousalTo=-1, int vsID=-1)
 	Sound.SetInstanceVolume(sid, Config.VolumeOrgasm)
 	Aroused.SetActorExposure(akActor, setArousalTo)
 	Aroused.UpdateActorOrgasmDate(akActor)
+	ApplyExpressionRaw(akActor, GetPrebuildExpression_Orgasm2(), 65, 100, openMouth=false)
+	bool[] cameraState
+	bool animStarted = false
 	if !IsAnimating(akActor)
-		bool[] cameraState = StartThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Orgasm"), true)
-		int i = 0
-		while i < 20
-			i+= 1
+		; Skip manually starting an animation for actors in contraptions.
+		; We replace the contraption anim via OAR instead, to preserve the animObject.
+		If !config.clibs.GetDevice(akActor) 
+			animStarted = true
+			cameraState = StartThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Orgasm"), true)
+		EndIf
+		float i = 0.0
+		while i < 16.5 ; This is set to match the "fall to knees" orgasm animation duration
+			i += 0.5
 			if !IsVibrating(akActor) && vsID != -1
 				Sound.StopInstance(vsID)
 				vsID=-1
 			EndIf
-			Utility.Wait(1)
+			Utility.Wait(0.5)
 		EndWhile
-	        EndThirdPersonAnimation(akActor, cameraState, true)
+		If animStarted
+	    	EndThirdPersonAnimation(akActor, cameraState, true)
+		EndIf
 	Else
 		if !IsVibrating(akActor) && vsID != -1
 			Sound.StopInstance(vsID)
 			vsID=-1
 		EndIf
 	EndIf
+	ResetExpressionRaw(akActor, 65)
+	akActor.RemoveFromFaction(zadNGOrgasmFaction)
 EndFunction
 
 ; Play panting sound from actor
@@ -1744,8 +1763,10 @@ Function SexlabMoan(actor akActor, int arousal=-1, sslBaseVoice voice = none)
 	if arousal == -1
 		arousal = Aroused.GetActorExposure(akActor)
 	EndIf
-	; Play the voice.
-	voice.Moan(akActor, arousal)
+	; Play the voice
+	if voice
+		voice.Moan(akActor, arousal)
+	EndIf
 EndFunction
 
 ; Play non-sexlab-moans
@@ -1808,14 +1829,23 @@ EndFunction
 ; Cause an actor to experience being edged.
 Function EdgeActor(actor akActor)
 	;SendModEvent("DeviceEdgedActor", akActor.GetLeveledActorBase().GetName())
+	akActor.AddToFaction(zadNGEdgedFaction)
     SendEdgeEvent(akActor)
 	int sID = EdgedSound.Play(akActor)
 	Sound.SetInstanceVolume(sid, Config.VolumeEdged)
-  if EnableVRSupport
-  	PlayThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Edged"), 3, permitRestrictive=true)
-  else
-    PlayThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Edged"), 19, permitRestrictive=true)
-  EndIf
+	ApplyExpressionRaw(akActor, GetPrebuildExpression_Orgasm1(), 65, 100, openMouth=false)
+	if !config.clibs.GetDevice(akActor) ; Don't animate actors in contraptions, OAR will handle that.
+		if EnableVRSupport
+			PlayThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Edged"), 3, permitRestrictive=true)
+		else
+			PlayThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Edged"), 19, permitRestrictive=true)
+		EndIf
+	Else
+		; Simply let OAR replace the idle/struggle animation while the SFX run.
+		Utility.Wait(19)
+	EndIf
+	ResetExpressionRaw(akActor, 65)
+	akActor.RemoveFromFaction(zadNGEdgedFaction)
 EndFunction
 
 
@@ -1886,16 +1916,15 @@ string function GetVibrationStrength(int vibStrength)
 	return "Invalid"
 EndFunction
 
-
 string Function BuildVibrationString(actor akActor, int vibStrength, bool vPlug, bool aPlug, bool vPiercings, bool nPiercings)
 	if ((vPiercings || nPiercings) && (vPlug || aPlug))
-		return "Your piercing(s) (In addition to the plug(s) within you) begin to vibrate " + GetVibrationStrength(vibStrength) + "!"
+        return "Your piercings and the plugs within you begin to vibrate " + GetVibrationStrength(vibStrength) + "!"
 	ElseIf ((vPiercings) && !(vPlug || aPlug))
 		return "Your clitoral piercing begins to vibrate " + GetVibrationStrength(vibStrength) + "!"
 	ElseIf ((nPiercings) && !(vPlug || aPlug))
 		return "Your nipple piercings begins to vibrate " + GetVibrationStrength(vibStrength) + "!"
 	Else
-		return "The plug(s) within you begin to vibrate " + GetVibrationStrength(vibStrength) + "!"
+		return "The plugs within you begin to vibrate " + GetVibrationStrength(vibStrength) + "!"
 	EndIf
 EndFunction
 
@@ -1903,7 +1932,7 @@ string Function BuildPostVibrationString(actor akActor, int vibStrength, bool vP
 	bool desperate = (Aroused.GetActorExposure(akActor) >= ArousalThreshold("Desperate"))
 	if ((vPiercings || nPiercings) && (vPlug || aPlug))
 		if Desperate
-			return "You let out a frustrated moan as your piercing and plugs abruptly cease to vibrate."
+			return "You let out a frustrated moan as your piercings and plugs abruptly cease to vibrate."
 		Else
 			return "Your piercings and plugs all cease to vibrate."
 		EndIf
@@ -1928,242 +1957,282 @@ string Function BuildPostVibrationString(actor akActor, int vibStrength, bool vP
 	EndIf
 EndFunction
 
+string Function BuildVibrationOrgasmString(actor akActor, int vibStrength, bool vPlug, bool aPlug, bool vPiercings, bool nPiercings)
+    If ((vPiercings) && !(vPlug || aPlug))
+		If akActor.GetLeveledActorBase().GetSex() == 1
+        	return "The vibration from your clitoral piercing sends you over the edge!"
+		Else
+        	return "The vibration from your genital piercing sends you over the edge!"
+		EndIf
+    ElseIf ((nPiercings) && !(vPlug || aPlug))
+        return "The vibration on your nipples sends you over the edge!"
+    Else
+        return "The plugs bring you to a thunderous climax!"
+    EndIf
+EndFunction
+
 ;;; Returns number of times actor came from this effect, -1 if it edged them, or -2 if an event was already ongoing.
-; This function has suffered from feature creep pretty hard since it's inception, and is in need of refactoring. Still works, but very messy.
-; Will split this up to a small library in the future. Will document this properly at that point.
 ; Parameters are persitant in pex files. 2-stage function call to avoid breaking older mods.
 ; This is the old signature of the function, and is needed for backwards compatibility
 int Function VibrateEffect(actor akActor, int vibStrength, int duration, bool teaseOnly=false, bool silent = false)
     return VibrateEffectV2(akActor, vibStrength, duration, teaseOnly, silent, AllowActorInScene = false)
 EndFunction
 
-; V2 This one allows more fine-tuned control by allowing callers to consider actors in scenes as valid
+; V2 This one allows more fine-tuned control by allowing callers to consider actors in scenes as valid.
+; Frayed (2025/09): I've refactored and updated this function quite a bit, but I've opted not to split
+; it up. It's bulky, but it's essentially a long dynamic scripted scene without clear reusable parts.
+; Better to simply keep it as the one-stop-shop that it was in the past for backwards compatibility.
 int Function VibrateEffectV2(actor akActor, int vibStrength, int duration, bool teaseOnly=false, bool silent = false, Bool AllowActorInScene = false)
-	; don't execute this function if the character is in combat. Nobody in their right mind starts playing with herself if there are people trying to kill her.
-	; Events that otherwise would call this function are responsible for providing alternatives as desired.
-	if akActor == PlayerRef && playerref.IsInCombat()
-        Log("Vibrate effect called on Player, but player is in combat. Don't start VibrateEffect.")
-		return -2
-	Endif
 	if !IsValidActorV2(akActor, AllowActorInScene)
 		Log("Actor is not valid. Don't start VibrateEffect.")
 		return -2
 	EndIf
+	
+	; Check which devices are equipped to build a multiplier for the vibration intensity.
 	AcquireAndSpinlock()
-	If duration == 0
-		duration = Utility.RandomInt(5,20)
-	EndIf
-	bool wasVibrating = IsVibrating(akActor)
-	int newDuration = GetVibrating(akActor) + duration
-	SetVibrating(akActor, newDuration)
-	if wasVibrating
-		Log("Actor already in VibratorFaction. Extending duration of existing event: "+newDuration)
-		deviceMutex = False
-		return -2
-	EndIf
-
 	bool vPlug = akActor.WornHasKeyword(zad_DeviousPlugVaginal)
 	bool aPlug = akActor.WornHasKeyword(zad_DeviousPlugAnal)
-	bool nPiercings = akActor.WornHasKeyword(zad_DeviousPiercingsNipple )
-	bool vPiercings = akActor.WornHasKeyword(zad_DeviousPiercingsVaginal )
-
+	bool nPiercings = akActor.WornHasKeyword(zad_DeviousPiercingsNipple)
+	bool vPiercings = akActor.WornHasKeyword(zad_DeviousPiercingsVaginal)
 	deviceMutex = False
 	float numVibratorsMult = 0.0
-	;;; Plugs
 	if vPlug
 		numVibratorsMult += 0.7
 	EndIf
 	if aPlug
 		numVibratorsMult += 0.3
 	EndIf
-	;;; Piercings
 	if nPiercings
 		numVibratorsMult += 0.25
 	EndIf
 	if vPiercings
 		numVibratorsMult += 0.5
 	EndIf
-
 	if numVibratorsMult == 0.0
-		numVibratorsMult = 1
+		return -2 ; no vibrating devices, just exit.
 	EndIf
 	if akActor.WornHasKeyword(zad_DeviousBlindfold) ; Increased sensitivity!
 		numVibratorsMult *= 1.15
 	EndIf
-	if !wasVibrating
-		SendModEvent("DeviceVibrateEffectStart", akActor.GetLeveledActorBase().GetName(), vibStrength * numVibratorsMult)
+
+	; NEW: subsequent calls to VibrateEffect on same actor overwrite duration and change strength.
+	; Previously, additional calls to VibrateEffect on same actor extended duration, but did not change strength.
+	If IsVibrating(akActor)
+		SetVibrating(akActor, 0) ; This signals other VibrateEffects already running on the actor to stop.
+		float timeout = 0 ; Use a timeout to prevent infinite loops (for any reason)
+		; Wait for other VibrateEffects to stop. This can take a while if the edge animation just started.
+		While (IsVibrating(akActor) || akActor.IsInFaction(zadNGEdgedFaction)) && timeout < 30.0
+			Utility.Wait(1.0)
+			timeout += 1.0
+		EndWhile
 	EndIf
-	int actorCame = 0
-	Log("VibrateEffect("+vibStrength +" for "+duration+"). VibrateMult: "+numVibratorsMult)
-	sound vibSoundSelect
-	
-	string msg = BuildVibrationString(akActor, vibStrength, vPlug, aPlug, vPiercings, nPiercings)
-	if vibStrength == 5
-		vibSoundSelect = VibrateVeryStrongSound
-	elseIf vibStrength == 4
-		vibSoundSelect = VibrateStrongSound
-	elseIf vibStrength == 3
-		vibSoundSelect = VibrateStandardSound
-	elseIf vibStrength == 2
-		vibSoundSelect = VibrateWeakSound
-	elseIf vibStrength == 1
-		vibSoundSelect = VibrateVeryWeakSound
-	else
-		Error("Vibrator received invalid strength setting.")
+	If IsVibrating(akActor)
+		Log("Could not terminate other vibrate effects on " + akActor + ", exiting VibrateEffect.")
 		return -2
 	EndIf
-	if !silent && akActor == PlayerRef
+
+	; All good, start setting up vibration.
+	If duration == 0
+		duration = Utility.RandomInt(5,20)
+	EndIf
+	SetVibrating(akActor, duration)
+
+	; Log, notify other mods and the player that vibration is starting.
+	SendModEvent("DeviceVibrateEffectStart", akActor.GetLeveledActorBase().GetName(), vibStrength * numVibratorsMult)
+	Log("VibrateEffect("+vibStrength +" for "+duration+" sec). VibrateMult: "+numVibratorsMult)
+	
+	bool actorIsPlayer = (akActor == PlayerRef)
+	if !silent && actorIsPlayer
+		string msg = BuildVibrationString(akActor, vibStrength, vPlug, aPlug, vPiercings, nPiercings)
 		NotifyPlayer(msg)
 	Endif
 
-	; Initialize Sounds
+	; Initialize vibe sounds
 	float vibSoundVol = Config.VolumeVibrator
-	if akActor != PlayerRef
+	if !actorIsPlayer
 		vibSoundVol = Config.VolumeVibratorNPC
 	EndIf
-	int vsID = vibSoundSelect.Play(akActor)
+	int vsID = GetVibrateSound(vibStrength).Play(akActor)
 	Sound.SetInstanceVolume(vsID, vibSoundVol)
-	int msID = MoanSound.Play(akActor)
-	Sound.SetInstanceVolume(msID, GetMoanVolume(akActor))
-	int timeVibrated = 0
-	int vibAnimStarted = 0
-	bool[] cameraState
 
 	; Start base expression
+	int currentArousal = Aroused.GetActorExposure(akActor)
 	sslBaseExpression expression = SexLab.RandomExpressionByTag("Pleasure")
-	ApplyExpression_v2(akActor, expression, 15, Math.Ceiling(Aroused.GetActorExposure(akActor)*0.6), openMouth=false) ;do not open mouth
-	if Utility.RandomInt() <= (10*vibStrength)
-    if !EnableVRSupport
-		  PlayThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Horny"), 3, permitRestrictive=true)
-    EndIf
-	EndIf
-	
-	; Actor in combat?
-	float combatModifier = 1
-	if (akActor.GetCombatState() != 0)
-		combatModifier = 0.5
-	EndIf
+	ApplyExpression_v2(akActor, expression, 15, Math.Ceiling(currentArousal*0.6), openMouth=false) ;do not open mouth
 
-	; Main Loop
-	While IsValidActorV2(akActor, AllowActorInScene) && timeVibrated < GetVibrating(akActor) && (akActor.WornHasKeyword(zad_DeviousPlug) || akActor.WornHasKeyword(zad_DeviousPiercingsNipple) || akActor.WornHasKeyword(zad_DeviousPiercingsVaginal))
-		; Log("XXX VibrateEffect: Begin Tick "+timeVibrated)
-		if (timeVibrated % 2) == 0 ; Make noise
-			; Log("XXX VibrateEffect: Making Noise")
-		 	akActor.CreateDetectionEvent(akActor, vibStrength * 10)
-			; Log("XXX VibrateEffect: Done Making Noise")
-		EndIf
-		;;;;;;;;;;
-		; Let the actor cum?
-		;;;;;;;;;;
-		; Log("XXX VibrateEffect: Let the actor cum?")
-		if timeVibrated >= 3 && vibStrength >= 3 && aroused.GetActorExposure(akActor)>= 99
-			int cumChance = (vibStrength * 2 * combatModifier) as Int
-			Log("CumChance:"+cumChance+", vibStrength:"+vibStrength)
-			if Utility.RandomInt() <= cumChance
-				;;;;;;;;;;
-				; Kill previous animation, if any.
-				;;;;;;;;;;
-				if vibAnimStarted != 0
-					EndThirdPersonAnimation(akActor, cameraState, permitRestrictive=true)
-					vibAnimStarted = 0
-				EndIf
-				actorCame += 1
-				if teaseOnly
-					ApplyExpressionRaw(akActor, GetPrebuildExpression_Orgasm1(),65, 100, openMouth=false)
-					Sound.StopInstance(vsID)
-					Sound.StopInstance(msID)
-					StopVibrating(akActor)
-					if !silent && akActor == PlayerRef
-						NotifyPlayer("The vibrations abruptly stop just short of bringing you to orgasm.")
-					Endif
-					EdgeActor(akActor)
-					ResetExpressionRaw(akActor, 65)
-					SendModEvent("DeviceVibrateEffectStop", akActor.GetLeveledActorBase().GetName(), vibStrength * numVibratorsMult)
-					return -1
-				EndIf
-				ApplyExpressionRaw(akActor, GetPrebuildExpression_Orgasm2(),65, 100, openMouth=false)
-				if !silent && akActor == PlayerRef
-					NotifyPlayer("The plugs bring you to a thunderous climax.")
-				EndIf
-				Sound.StopInstance(msID)
-				ActorOrgasm(akActor, vsID=vsID)
-				ResetExpressionRaw(akActor, 65)
-				if IsVibrating(akActor)
-					msID = MoanSound.Play(akActor)
-					Sound.SetInstanceVolume(msID, GetMoanVolume(akActor))
-				EndIf
+	; Play an animation at vibration start, but not in VR, and only if actor isn't already animating.
+	int vibAnimStarted = 0
+	int msID = -1 ; Moan sound ID. Will be started on first horny anim
+	If !EnableVRSupport && !IsAnimating(akActor)
+		ObjectReference contraption = config.clibs.GetDevice(akActor)
+		If contraption
+			; Actor is in contraption. Play struggle animation.
+			; NOTE: Currently StruggleScene is not async, it will play for ~10s before this script continues.
+			(contraption as zadcFurnitureScript).StruggleScene(akActor)
+		Else
+			; Chance to play a horny idle that interrupts control, but only if actor is either very aroused or standing still/walking slowly.
+			int hornyIdleChanceInitial = vibStrength * currentArousal / 10
+			if !akActor.IsInCombat() && Utility.RandomInt() <= hornyIdleChanceInitial && ((!akActor.IsRunning() && !akActor.IsSprinting()) || currentArousal > 75)
+				msID = MoanSound.Play(akActor)
+				Sound.SetInstanceVolume(msID, GetMoanVolume(akActor, currentArousal))
+				cameraState = StartThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Horny"), permitRestrictive=true)
+				vibAnimStarted = 1
+				PlayerIsInCancellableAnimation = true
 			EndIf
 		EndIf
-		; Log("XXX VibrateEffect: Done Let the actor cum?")
-		;;;;;;;;;;
-		; Increase arousal, moan sound.
-		;;;;;;;;;;
-		if (timeVibrated % (6-vibStrength)) == 0
-			; Log("XXX VibrateEffect: Increasing Arousal")
-			UpdateExposure(akActor, 5 * combatModifier * numVibratorsMult, skipMultiplier=true)
-			; Log("XXX VibrateEffect: Arousal 2")
-			Sound.SetInstanceVolume(msID, GetMoanVolume(akActor))
-			; Log("XXX VibrateEffect: Done Increasing Arousal")
+	EndIf
+
+	; Main Loop. Run as long as actor is valid and still being vibed.
+	int cumChance = vibStrength * 2
+	int actorCame = 0
+	int timeVibrated = 0
+	bool[] cameraState
+	While IsValidActorV2(akActor, AllowActorInScene) && timeVibrated < GetVibrating(akActor) && (akActor.WornHasKeyword(zad_DeviousPlug) || akActor.WornHasKeyword(zad_DeviousPiercingsNipple) || akActor.WornHasKeyword(zad_DeviousPiercingsVaginal))
+		if !akActor.IsInCombat() ; Don't do animations or arousal in combat. Nobody in their right mind starts playing with herself if there are people trying to kill her.
+			currentArousal = Aroused.GetActorExposure(akActor)
+			int hornyIdleChance = VibStrength * currentArousal / 33 ; caps out at ~15% at max arousal and vib strength.
+			
+			; Let the actor cum?
+			if timeVibrated >= 3 && vibStrength >= 3 && currentArousal >= 99 && !akActor.IsInFaction(Sexlab.AnimatingFaction)
+				; Log("CumChance:"+cumChance+", vibStrength:"+vibStrength)
+				if Utility.RandomInt() <= cumChance
+					; Clear animating flag first so we can play the edge/orgasm animation.
+					SetAnimating(akActor, false)
+					if teaseOnly
+						; Edge. Exit out of VibrateEffect after it's done.
+						Sound.StopInstance(vsID)
+						if msID != -1
+							Sound.StopInstance(msID)
+							msID = -1
+						endIf
+						StopVibrating(akActor)
+						if !silent && actorIsPlayer
+							NotifyPlayer("The vibrations abruptly stop just short of bringing you to orgasm.")
+						Endif
+						EdgeActor(akActor)
+						SendModEvent("DeviceVibrateEffectStop", akActor.GetLeveledActorBase().GetName(), vibStrength * numVibratorsMult)
+						return -1
+					Else
+						; Orgasm. Continue VibrateEffect.
+						actorCame += 1
+						if !silent && actorIsPlayer
+							string o_msg = BuildVibrationOrgasmString(akActor, vibStrength, vPlug, aPlug, vPiercings, nPiercings)
+							NotifyPlayer(o_msg)
+						EndIf
+						if msID != -1
+							Sound.StopInstance(msID)
+							msID = -1
+						endIf
+						ActorOrgasm(akActor, vsID=vsID)
+					EndIf
+				EndIf
+			EndIf
+
+			; Increase arousal, moan sound.
+			if (timeVibrated % (6-vibStrength)) == 0
+				UpdateExposure(akActor, 5 * numVibratorsMult, skipMultiplier=true)
+				if msID != -1
+					Sound.SetInstanceVolume(msID, GetMoanVolume(akActor, currentArousal))
+				EndIf
+			EndIf
+
+			; Play another horny idle randomly.
+			if (vibAnimStarted == 0) && Utility.RandomInt() <= hornyIdleChance && !IsAnimating(akActor) && ((!akActor.IsRunning() && !akActor.IsSprinting()) || currentArousal > 90)
+				ApplyExpression(akActor, expression, (currentArousal * 0.75) as Int, openMouth=true)
+				if !EnableVRSupport && !config.clibs.GetDevice(akActor)
+					If msID == -1
+						msID = MoanSound.Play(akActor)
+						Sound.SetInstanceVolume(msID, GetMoanVolume(akActor, currentArousal))
+					EndIf
+					cameraState = StartThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Horny"), permitRestrictive=true)
+					vibAnimStarted = timeVibrated + 1
+					PlayerIsInCancellableAnimation = true
+				EndIf
+			EndIf
+			
+			; Stop horny idles after they play for a while.
+			if (vibAnimStarted != 0) && (timeVibrated - vibAnimStarted >= 5 + currentArousal / 10) ; Between 5-15 sec. More horny = longer.
+				ApplyExpression_v2(akActor, expression, 15, (timeVibrated / duration) * 75, openMouth=False)
+				EndThirdPersonAnimation(akActor, cameraState, permitRestrictive=true)
+				If msID != -1
+					Sound.StopInstance(msID)
+					msID = -1
+				EndIf
+				vibAnimStarted = 0
+			EndIf
+		Else
+			; If actor got into combat after moan sound started, stop it. They now have more important things to do!
+			If msID != -1
+				Sound.StopInstance(msID)
+				msID = -1
+			EndIf
 		EndIf
-		;;;;;;;;;;
-		; Play horny idle?
-		;;;;;;;;;;
-		if (vibAnimStarted == 0) && Utility.RandomInt() <= (3+(VibStrength * 2)) && !IsAnimating(akActor)
-			; Log("XXX Starting Horny Idle")
-			ApplyExpression(akActor, expression, (Aroused.GetActorExposure(akActor) * 0.75) as Int, openMouth=true)
-			; Select animation
-      if !EnableVRSupport
-			  cameraState=StartThirdPersonAnimation(akActor, AnimSwitchKeyword(akActor, "Horny"), permitRestrictive=true)
-      EndIf
-			vibAnimStarted = timeVibrated + 1
-			; Log("XXX VibrateEffect: Done starting horny idle")
+		
+		if (timeVibrated % 2) == 0 ; Make noise for detection
+			akActor.CreateDetectionEvent(akActor, vibStrength * 10)
 		EndIf
-		;;;;;;;;;;
-		; Stop horny idle?
-		;;;;;;;;;;
-		if (vibAnimStarted != 0) && (timeVibrated - vibAnimStarted >= 6) ; Stop animation after 5 seconds.
-			; Log("XXX Stopping Horny Idle")
-			ApplyExpression_v2(akActor, expression,15, (timeVibrated / duration) * 75, openMouth=False)
-			EndThirdPersonAnimation(akActor, cameraState, permitRestrictive=true)
-			vibAnimStarted = 0
-			; Log("XXX VibrateEffect: Done stopping horny idle")
-		EndIf
-		;;;;;;;;;;
-		; Shake camera effect.
-		;;;;;;;;;
-		if akActor == PlayerRef
-			; Log("XXX VibrateEffect: Shaking Camera")
-			;Game.ShakeCamera(akActor, (0.05*vibStrength), 1)
-			; Log("XXX VibrateEffect: Done Shaking Camera")
-		EndIf
-		; Log("XXX VibrateEffect: End Tick "+timeVibrated+".")
+
 		Utility.Wait(1)
 		timeVibrated += 1
 	EndWhile
 
+	; Vibrate end. Stop the sounds, reset the expression, clean up animations, and signal that vibrate ended.
 	Sound.StopInstance(vsID)
-	Sound.StopInstance(msID)
+	If msID != -1
+		Sound.StopInstance(msID)
+		msID = -1
+	EndIf
 	if IsValidActorV2(akActor, AllowActorInScene)
 		; Reset expression
 		ResetExpressionRaw(akActor, 15)
 	EndIf
-	;;;;;;;;;;
 	; Make sure actor isn't stuck in animation
-	;;;;;;;;;;
-	if  vibAnimStarted != 0
+	if vibAnimStarted != 0
 		EndThirdPersonAnimation(akActor, cameraState, permitRestrictive=true)
 		vibAnimStarted = 0
 	EndIf
 	StopVibrating(akActor)
-	if !silent && akActor == PlayerRef
+	if !silent && actorIsPlayer
 		NotifyPlayer(BuildPostVibrationString(akActor, vibStrength, vPlug, aPlug, vPiercings, nPiercings))
 	Endif
 	SendModEvent("DeviceVibrateEffectStop", akActor.GetLeveledActorBase().GetName(), vibStrength * numVibratorsMult)
+
+	; NOTE: these functions are probably for older Aroused versions with different behaviour, but they
+	; aren't relevant anymore for newer ones. For e.g. OSL Aroused these do absolutely nothing.
+	; I'll leave them in for now for backwards compatibility, but they're probably obsolete. - Frayed, 2025/06
 	UpdateArousalTimeRate(akActor, vibStrength * numVibratorsMult)
 	Aroused.GetActorArousal(akActor)
+
 	return actorCame
 EndFunction
 
+Function VibrateEffectAsync(actor akActor, int vibStrength, int duration, bool teaseOnly=false, bool silent=false, Bool AllowActorInScene=false)
+	Int Handle = ModEvent.Create("DDNG_RequestVibration")
+    If (Handle)    
+        ModEvent.PushForm(Handle, akActor)
+        ModEvent.PushInt(Handle, vibStrength)
+        ModEvent.PushInt(Handle, duration)
+        ModEvent.PushBool(Handle, teaseOnly)
+        ModEvent.PushBool(Handle, silent)
+        ModEvent.PushBool(Handle, AllowActorInScene)
+        ModEvent.Send(Handle)
+    Endif
+EndFunction
+
+Sound Function GetVibrateSound(int vibStrength)
+	sound vibSoundSelect
+	if vibStrength >= 5
+		return VibrateVeryStrongSound
+	elseIf vibStrength == 4
+		return VibrateStrongSound
+	elseIf vibStrength == 3
+		return VibrateStandardSound
+	elseIf vibStrength == 2
+		return VibrateWeakSound
+	elseIf vibStrength <= 1
+		return VibrateVeryWeakSound
+	EndIf
+EndFunction
 
 Function AttrDrain(actor akActor, string attr)
 	float randomize = (Utility.RandomInt(1,75) as Float) / 100
@@ -2209,7 +2278,7 @@ EndFunction
 	
 Function SpellCastVibrate(Actor akActor, Form tmp)
 	Spell theSpell = (tmp as Spell)
-	if akActor.WornHasKeyword(zad_DeviousPlug) && ActorHasKeyword(akActor, zad_EffectVibrateOnSpellCast)
+	if Utility.RandomInt() < config.EffectVibrateChance && akActor.WornHasKeyword(zad_DeviousPlug) && ActorHasKeyword(akActor, zad_EffectVibrateOnSpellCast)
 		SendModEvent("EventOnCast")
 		Log("OnSpellCast()")
 		If akActor == PlayerRef && akActor.GetCombatState() >= 1
@@ -2557,11 +2626,12 @@ Function ChastityBeltStruggle(actor akActor)
 	Endif
 	; use PlayThirdPersonAnimation instead of StartThirdPersonAnimation for non-looping animation
 	; alternatively EndThirdPersonAnimation can be called manually if termination is conditional
-  if EnableVRSupport
-    PlayThirdPersonAnimation(akActor, "DDChastityBeltStruggle0" + Utility.RandomInt(1, 2), Utility.RandomInt(3, 4), true)
-  else
-    PlayThirdPersonAnimation(akActor, "DDChastityBeltStruggle0" + Utility.RandomInt(1, 2), Utility.RandomInt(5, 30), true)
-  endif
+	PlayerIsInCancellableAnimation = true
+	if EnableVRSupport
+	PlayThirdPersonAnimation(akActor, "DDChastityBeltStruggle0" + Utility.RandomInt(1, 2), Utility.RandomInt(3, 4), true)
+	else
+	PlayThirdPersonAnimation(akActor, "DDChastityBeltStruggle0" + Utility.RandomInt(1, 2), Utility.RandomInt(5, 30), true)
+	endif
 	Aroused.UpdateActorExposure(akActor, 5)
 	If akActor == PlayerRef
 		notify("You tug at your chastity belt, but it won't come off!")
