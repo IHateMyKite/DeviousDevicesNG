@@ -1204,5 +1204,8 @@
     ]
   ],
   "priority": 943394424,
-  "refs": {}
+  "refs": {},
+  "rotate": true,
+  "scale": false,
+  "translate": true
 }
