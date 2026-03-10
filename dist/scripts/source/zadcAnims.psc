@@ -44,6 +44,7 @@ function LoadAnimations()
 	SexLab.GetSetAnimationObject("DDC_B_GallPOH_Behind", "CreateDDC_B_GallPOH_Behind", clib)
 	SexLab.GetSetAnimationObject("DDC_B_GallPOH_Holding", "CreateDDC_B_GallPOH_Holding", clib)
 	SexLab.GetSetAnimationObject("DDC_B_GallPStrap_BentOver", "CreateDDC_B_GallPStrap_BentOver", clib)
+	SexLab.GetSetAnimationObject("DDC_B_GallPStrap_Standing", "CreateDDC_B_GallPStrap_Standing", clib)
 
 	;------------------------
 	; TILTED WHEEL ANIMATIONS
@@ -776,6 +777,41 @@ Function CreateDDC_B_GallPStrap_BentOver(int id)
 		Anim.AddPositionStage(A, asAnim1 + "_A2_S3")
 		Anim.AddPositionStage(A, asAnim1 + "_A2_S4")
 		Anim.AddPositionStage(A, asAnim1 + "_A2_S5")
+
+		Anim.AddTag("GallowsStrappado")
+		Anim.AddTag("Vaginal")
+		Anim.AddTag("Aggressive")
+		Anim.AddTag("Sex")
+
+		Anim.AddTag("DomSub")
+		Anim.AddTag("DeviousDevice")
+		Anim.AddTag("NoSwap")
+	
+		Anim.Save(-1)
+	EndIf
+EndFunction
+
+Function CreateDDC_B_GallPStrap_Standing(int id)
+	String asAnim1 = "DDC_B_GallPStrap_Standing"
+
+	sslBaseAnimation Anim = SexLab.GetAnimationObject("DDC_B_GallPStrap_Standing")
+	if Anim != none && Anim.Name != "DDC_B_GallPStrap_Standing"
+		Anim.Name = "DDC_B_GallPStrap_Standing"
+		Anim.SoundFX = Squishing
+
+		Int B = Anim.AddPosition(Female, AddCum = Vaginal)
+		Anim.AddPositionStage(B, asAnim1 + "_A1_S1")
+		Anim.AddPositionStage(B, asAnim1 + "_A1_S2")
+		Anim.AddPositionStage(B, asAnim1 + "_A1_S3")
+		Anim.AddPositionStage(B, asAnim1 + "_A1_S4")
+		Anim.AddPositionStage(B, asAnim1 + "_A1_S5")
+
+		Int A = Anim.AddPosition(Male)
+		Anim.AddPositionStage(A, asAnim1 + "_A2_S1")
+		Anim.AddPositionStage(A, asAnim1 + "_A2_S2", sos = 4)
+		Anim.AddPositionStage(A, asAnim1 + "_A2_S3")
+		Anim.AddPositionStage(A, asAnim1 + "_A2_S4")
+		Anim.AddPositionStage(A, asAnim1 + "_A2_S5", sos = -1)
 
 		Anim.AddTag("GallowsStrappado")
 		Anim.AddTag("Vaginal")
