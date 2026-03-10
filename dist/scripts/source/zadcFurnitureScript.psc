@@ -314,6 +314,7 @@ Function LockActor(actor act)
 	Else
 		ActorUtil.AddPackageOverride(user, PickRandomPose(), 99)	
 	EndIf
+	user.SetAnimationVariableBool("bHumanoidFootIKDisable", true) ; so mr Howard and his footIK stops wrecking our animators' carefully calculated feet positions.
 	User.EvaluatePackage()			
 	self.disable()			
 	If act == libs.PlayerRef
@@ -367,6 +368,7 @@ Function UnlockActor()
 	UnregisterForUpdate()
 	UnregisterForAllControls()
 	user.StopTranslation()
+	user.SetAnimationVariableBool("bHumanoidFootIKDisable", false) ; Restore footIK
 	ActorUtil.RemovePackageOverride(user, CurrentStruggle)
 	ActorUtil.RemovePackageOverride(user, CurrentPose)
 	If user == Game.GetPlayer()
