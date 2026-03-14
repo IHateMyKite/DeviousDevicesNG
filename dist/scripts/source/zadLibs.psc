@@ -451,7 +451,6 @@ Bool Function UnlockDevice(actor akActor, armor deviceInventory, armor deviceRen
 				if akActor.GetFactionRank(zadGagPanelFaction) == 0
 					akActor.RemoveItem(zad_GagPanelPlug, 1)
 				EndIf
-				akActor.SetFactionRank(zadGagPanelFaction, 0)
 				akActor.RemoveFromFaction(zadGagPanelFaction)
 			EndIf
 		EndIf
@@ -2401,7 +2400,6 @@ EndFunction
 ; Set DD's actor animating status.
 Function SetAnimating(actor akActor, bool isAnimating=true)
 	if isAnimating
-		akActor.AddToFaction(zadAnimatingFaction)
 		akActor.SetFactionRank(zadAnimatingFaction, 1)
 	Else
 		akActor.RemoveFromFaction(zadAnimatingFaction)
@@ -2431,7 +2429,6 @@ EndFunction
 
 ; Stop vibration event on actor.
 Function StopVibrating(actor akActor)
-	akActor.SetFactionRank(zadVibratorFaction, 0)
 	akActor.RemoveFromFaction(zadVibratorFaction)
 EndFunction
 

@@ -11,14 +11,12 @@ int inflationFactionRank
 
 Function OnEquippedPre(actor akActor, bool silent=false)
 	libs.Log("Inflatable Gag: Setting faction rank.")
-	akActor.AddToFaction(zadx_InflatableGagFaction)
 	akActor.SetFactionRank(zadx_InflatableGagFaction, 1)
 	Parent.OnEquippedPre(akActor, silent)
 EndFunction
 
 Function OnRemoveDevice(actor akActor)
 	libs.Log("Inflatable Gag: Resetting faction rank.")
-	akActor.SetFactionRank(zadx_InflatableGagFaction, 0)
 	akActor.RemoveFromFaction(zadx_InflatableGagFaction)
 EndFunction
 

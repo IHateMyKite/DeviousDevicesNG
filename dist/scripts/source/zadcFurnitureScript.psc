@@ -336,7 +336,6 @@ Function LockActor(actor act)
 	EndIf
 	ApplyEffects(user)
 	ApplyDevices(user)	
-	user.AddToFaction(clib.zadcNGInContraptionFaction)
 	user.SetFactionRank(clib.zadcNGInContraptionFaction, 1)
 	RegisterForSingleUpdate(30)	
 	LastBreakEscapeAttemptAt = 0.0
@@ -387,7 +386,6 @@ Function UnlockActor()
 	RemoveEffects(user)
 	clib.ResetNiOverrideOverride(user)
 	RemoveDevices(user)
-	user.SetFactionRank(clib.zadcNGInContraptionFaction, 0)
 	user.RemoveFromFaction(clib.zadcNGInContraptionFaction)
 	;If ForceStripActor			
 	;	clib.RestoreOutfit(user)
