@@ -34,7 +34,7 @@ Event OnTrainingViolation(string eventName, string argString, float argNum, form
 	if argString == "SpellCast"
 		ModDaysRemaining(1, maxRange=GetTrainingRange())
 		libs.NotifyPlayer("Your mental reserves are dramatically drained as the plug punishes you.")
-		libs.PlayerRef.DamageAv("Magicka", 200)
+		libs.PlayerRef.DamageActorValue("Magicka", 200)
 	EndIf
 EndEvent
 

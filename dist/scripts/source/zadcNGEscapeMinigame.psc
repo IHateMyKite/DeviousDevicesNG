@@ -372,7 +372,7 @@ Function Progress()
 EndFunction
 
 Function SlotAppropriateSounds()
-	If PlayerRef.GetActorBase().GetSex() == 0
+	If (PlayerRef.GetBaseObject() as ActorBase).GetSex() == 0
 		gruntMild = zadNG_GruntMaleMild
 		gruntFrustrated = zadNG_GruntMaleFrustrated
 		pantMild = zadNG_PantMaleMild

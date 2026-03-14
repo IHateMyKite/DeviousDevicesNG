@@ -51,7 +51,7 @@ Event OnUpdateGameTime()
             int i = 0
             while i < libs.Config.NumNpcs
                 if MonitoredNpcs[i]
-                    akActor = MonitoredNpcs[i].GetActorReference()
+                    akActor = MonitoredNpcs[i].GetReference() as Actor
                     if akActor && libs.IsValidActor(akActor)
                         ; questScript.ProcessEffects(akActor)
                         if akActor.WornHasKeyword(libs.zad_DeviousBelt)
@@ -83,7 +83,7 @@ Event OnUpdate()
     actor akActor
     while i < libs.Config.NumNpcs
         if MonitoredNpcs[i]
-            akActor = MonitoredNpcs[i].GetActorReference()
+            akActor = MonitoredNpcs[i].GetReference() as Actor
             if akActor && libs.IsValidActor(akActor)
                 ProcessArmbinderEffect(akActor)
             EndIf

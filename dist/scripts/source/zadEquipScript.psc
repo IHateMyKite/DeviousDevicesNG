@@ -869,7 +869,7 @@ Function DeviceMenuCarryOn()
 EndFunction
 
 Function DisplayDifficultyMsg()
-    Int StruggleEscapeChance = Math.Floor(BaseEscapeChance)
+    Int StruggleEscapeChance = BaseEscapeChance as Int
     String result = "You carefully examine the " + DeviceName + ". "
     If StruggleEscapeChance > 75
         result += "This restraint is fairly weak and will not offer much resistance against struggling."
@@ -1109,7 +1109,7 @@ Int Function Escape(Float Chance)
     If Utility.RandomFloat(0.0, 99.9) < (Chance * CalculateDifficultyModifier(True))
         libs.log("Player has escaped " + DeviceName)
         ; increase success counter
-        libs.zadDeviceEscapeSuccessCount.SetValueInt(libs.zadDeviceEscapeSuccessCount.GetValueInt() + 1)
+        libs.zadDeviceEscapeSuccessCount.SetValue(libs.zadDeviceEscapeSuccessCount.GetValue() + 1)
         RemoveDevice(libs.PlayerRef)
         libs.SendDeviceEscapeEvent(DeviceInventory, zad_DeviousDevice, true)
         return 1
@@ -1149,17 +1149,17 @@ Float Function CalclulateCutSuccess()
     If CutDeviceEscapeChance > 0.0
         ; add 1% for every previous attempt
         result += EscapeCutAttemptsMade        
-        If Libs.PlayerRef.GetAV("OneHanded") > 25
+        If Libs.PlayerRef.GetActorValue("OneHanded") > 25
             result += 1.0
         Endif
-        If Libs.PlayerRef.GetAV("OneHanded") > 50
+        If Libs.PlayerRef.GetActorValue("OneHanded") > 50
             result += 2.0
         Endif
-        If Libs.PlayerRef.GetAV("OneHanded") > 75
+        If Libs.PlayerRef.GetActorValue("OneHanded") > 75
             result += 3.0
         Endif
         ; apply bonus for total successful escapes
-        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
+        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue() as Int
         If EscapesMade > 10
             result += 1.0
         Endif
@@ -1313,17 +1313,17 @@ Float Function CalclulateLockPickSuccess()
     If LockPickEscapeChance > 0.0
         ; add 1% for every previous attempt
         result += EscapeLockPickAttemptsMade        
-        If Libs.PlayerRef.GetAV("Lockpicking") > 25
+        If Libs.PlayerRef.GetActorValue("Lockpicking") > 25
             result += 1.0
         Endif
-        If Libs.PlayerRef.GetAV("Lockpicking") > 50
+        If Libs.PlayerRef.GetActorValue("Lockpicking") > 50
             result += 2.0
         Endif
-        If Libs.PlayerRef.GetAV("Lockpicking") > 75
+        If Libs.PlayerRef.GetActorValue("Lockpicking") > 75
             result += 3.0
         Endif
         ; apply bonus for total successful escapes
-        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
+        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue() as Int
         If EscapesMade > 10
             result += 1.0
         Endif
@@ -1421,17 +1421,17 @@ Float Function CalclulateStruggleSuccess()
         ; add 1% for every previous attempt
         result += EscapeStruggleAttemptsMade        
         ; apply strength bonus
-        If Libs.PlayerRef.GetAV("Destruction") > 25 || Libs.PlayerRef.GetAV("Alteration") > 25
+        If Libs.PlayerRef.GetActorValue("Destruction") > 25 || Libs.PlayerRef.GetActorValue("Alteration") > 25
             result += 1.0
         Endif
-        If Libs.PlayerRef.GetAV("Destruction") > 50 || Libs.PlayerRef.GetAV("Alteration") > 50
+        If Libs.PlayerRef.GetActorValue("Destruction") > 50 || Libs.PlayerRef.GetActorValue("Alteration") > 50
             result += 2.0
         Endif
-        If Libs.PlayerRef.GetAV("Destruction") > 75 || Libs.PlayerRef.GetAV("Alteration") > 75
+        If Libs.PlayerRef.GetActorValue("Destruction") > 75 || Libs.PlayerRef.GetActorValue("Alteration") > 75
             result += 3.0
         Endif        
         ; apply bonus for total successful escapes
-        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
+        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue() as Int
         If EscapesMade > 10
             result += 1.0
         Endif

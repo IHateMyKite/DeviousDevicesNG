@@ -75,7 +75,7 @@ EndFunction
 
 float Function GetCurrentTimeOfDay()
 	float Time = libs.GameDaysPassed.GetValue()
-	Time -= Math.Floor(Time) ; Remove "previous in-game days passed" bit
+	Time -= Time as Int ; Remove "previous in-game days passed" bit
 	Time *= 24 ; Convert from fraction of a day to number of hours
 	Return Time
 EndFunction

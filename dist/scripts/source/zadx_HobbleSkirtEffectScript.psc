@@ -31,8 +31,8 @@ bool Function GetRequiem()
 EndFunction
 
 Function ApplySM(actor akTarget)
-	akTarget.DamageAv("CarryWeight", 0.02)
-	akTarget.RestoreAv("CarryWeight", 0.02)
+	akTarget.DamageActorValue("CarryWeight", 0.02)
+	akTarget.RestoreActorValue("CarryWeight", 0.02)
 EndFunction
 
 Event OnEffectStart(Actor akTarget, Actor akCaster)

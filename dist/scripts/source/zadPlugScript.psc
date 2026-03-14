@@ -109,10 +109,10 @@ Function RemovePlugNoLock()
 		EndIf
 		return
 	EndIf
-	if deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugVaginal) && (libs.zadInflatablePlugStateVaginal.GetValueInt() > 0)
+	if deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugVaginal) && (libs.zadInflatablePlugStateVaginal.GetValue() > 0)
 		libs.notify("You cannot remove this plug as long as it is inflated.", messagebox = true)
 		return
-	elseif deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugAnal) && (libs.zadInflatablePlugStateAnal.GetValueInt() > 0)
+	elseif deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugAnal) && (libs.zadInflatablePlugStateAnal.GetValue() > 0)
 		libs.notify("You cannot remove this plug as long as it is inflated.", messagebox = true)
 		return
 	EndIf
@@ -140,10 +140,10 @@ Function RemovePlugLock()
 		EndIf
 		return
 	EndIf
-	if deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugVaginal) && (libs.zadInflatablePlugStateVaginal.GetValueInt() > 0)
+	if deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugVaginal) && (libs.zadInflatablePlugStateVaginal.GetValue() > 0)
 		libs.notify("You cannot remove this plug as long as it is inflated.", messagebox = true)
 		return
-	elseif deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugAnal) && (libs.zadInflatablePlugStateAnal.GetValueInt() > 0)
+	elseif deviceRendered.HasKeyword(libs.zad_kw_InflatablePlugAnal) && (libs.zadInflatablePlugStateAnal.GetValue() > 0)
 		libs.notify("You cannot remove this plug as long as it is inflated.", messagebox = true)
 		return
 	EndIf

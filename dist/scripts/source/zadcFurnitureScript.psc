@@ -369,7 +369,7 @@ Function UnlockActor()
 	user.StopTranslation()
 	ActorUtil.RemovePackageOverride(user, CurrentStruggle)
 	ActorUtil.RemovePackageOverride(user, CurrentPose)
-	If user == Game.GetPlayer()
+	If user == libs.PlayerRef
 		Game.SetPlayerAIDriven(False)
 		Game.EnablePlayerControls()	
 		user.RemoveItem(clib.zadc_NoWaitItem, user.GetItemCount(clib.zadc_NoWaitItem), abSilent = True)
@@ -1054,7 +1054,7 @@ Float Function CalculateDifficultyModifier(Bool operator = true)
 EndFunction
 
 Function DisplayDifficultyMsg()
-	Int StruggleEscapeChance = Math.Floor(BaseEscapeChance)
+	Int StruggleEscapeChance = BaseEscapeChance as Int
 	String result = "You carefully examine the " + DeviceName + ". "
 	If StruggleEscapeChance > 75
 		result += "This restraint is fairly weak and will not offer much resistance against struggling."
@@ -1182,7 +1182,7 @@ Bool Function Escape(Float Chance)
 	If Utility.RandomFloat(0.0, 99.9) < (Chance * CalculateDifficultyModifier(True))
 		libs.log("User has escaped " + DeviceName)
 		; increase success counter
-		libs.zadDeviceEscapeSuccessCount.SetValueInt(libs.zadDeviceEscapeSuccessCount.GetValueInt() + 1)				
+		libs.zadDeviceEscapeSuccessCount.SetValue(libs.zadDeviceEscapeSuccessCount.GetValue() + 1)				
 		;libs.SendDeviceEscapeEvent(DeviceInventory, zad_DeviousDevice, true)
 		return True
 	Else
@@ -1268,17 +1268,17 @@ Float Function CalclulateStruggleSuccess()
 		; add 1% for every previous attempt
 		result += EscapeStruggleAttemptsMade		
 		; apply strength bonus
-		If Libs.PlayerRef.GetAV("Stamina") > 25 
+		If Libs.PlayerRef.GetActorValue("Stamina") > 25 
 			result += 1.0
 		Endif
-		If Libs.PlayerRef.GetAV("Stamina") > 50
+		If Libs.PlayerRef.GetActorValue("Stamina") > 50
 			result += 2.0
 		Endif
-		If Libs.PlayerRef.GetAV("Stamina") > 75 
+		If Libs.PlayerRef.GetActorValue("Stamina") > 75 
 			result += 3.0
 		Endif		
 		; apply bonus for total successful escapes - shares that value with wearable restraints
-		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
+		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue() as Int
 		If EscapesMade > 10
 			result += 1.0
 		Endif
@@ -1336,17 +1336,17 @@ Float Function CalclulateBreakSuccess()
 	If BreakDeviceEscapeChance > 0.0
 		; add 1% for every previous attempt
 		result += EscapeBreakAttemptsMade		
-		If Libs.PlayerRef.GetAV("OneHanded") > 25 || Libs.PlayerRef.GetAV("TwoHanded") > 25
+		If Libs.PlayerRef.GetActorValue("OneHanded") > 25 || Libs.PlayerRef.GetActorValue("TwoHanded") > 25
 			result += 1.0
 		Endif
-		If Libs.PlayerRef.GetAV("OneHanded") > 50 || Libs.PlayerRef.GetAV("TwoHanded") > 50
+		If Libs.PlayerRef.GetActorValue("OneHanded") > 50 || Libs.PlayerRef.GetActorValue("TwoHanded") > 50
 			result += 2.0
 		Endif
-		If Libs.PlayerRef.GetAV("OneHanded") > 75 || Libs.PlayerRef.GetAV("TwoHanded") > 75
+		If Libs.PlayerRef.GetActorValue("OneHanded") > 75 || Libs.PlayerRef.GetActorValue("TwoHanded") > 75
 			result += 3.0
 		Endif
 		; apply bonus for total successful escapes
-		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
+		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue() as Int
 		If EscapesMade > 10
 			result += 1.0
 		Endif
@@ -1450,17 +1450,17 @@ Float Function CalclulateLockPickSuccess()
 	If LockPickEscapeChance > 0.0
 		; add 1% for every previous attempt
 		result += EscapeLockPickAttemptsMade		
-		If Libs.PlayerRef.GetAV("Lockpicking") > 25
+		If Libs.PlayerRef.GetActorValue("Lockpicking") > 25
 			result += 1.0
 		Endif
-		If Libs.PlayerRef.GetAV("Lockpicking") > 50
+		If Libs.PlayerRef.GetActorValue("Lockpicking") > 50
 			result += 2.0
 		Endif
-		If Libs.PlayerRef.GetAV("Lockpicking") > 75
+		If Libs.PlayerRef.GetActorValue("Lockpicking") > 75
 			result += 3.0
 		Endif
 		; apply bonus for total successful escapes
-		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
+		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue() as Int
 		If EscapesMade > 10
 			result += 1.0
 		Endif

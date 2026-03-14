@@ -1549,7 +1549,7 @@ Function ImportEvents()
 EndFunction
 
 Function ExportSettings()
-	JsonUtil.SetStringValue(File, "ExportLabel", Game.GetPlayer().GetLeveledActorBase().GetName()+" - "+Utility.GetCurrentRealTime() as int)
+	JsonUtil.SetStringValue(File, "ExportLabel", libs.PlayerRef.GetLeveledActorBase().GetName()+" - "+Utility.GetCurrentRealTime() as int)
 	JsonUtil.SetIntValue(File, "Version", GetVersion())
 	ExportDevicesUnderneath()
 	ExportEvents()

@@ -1364,7 +1364,7 @@ function RelieveSelf()
         actors[0] = libs.PlayerRef
         SexLab.StartSex(actors, anims)
     endif
-    SetStage(100)
+    SetCurrentStageID(100)
 EndFunction
 
 Event OnSleepStart(float afSleepStartTime, float afDesiredSleepEndTime)	

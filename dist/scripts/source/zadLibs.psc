@@ -840,7 +840,7 @@ Function InflateAnalPlug(actor akActor, int amount = 1)
 	EndIf	
 	int currentVal = -1
 	If akActor == PlayerRef
-		currentVal = zadInflatablePlugStateAnal.GetValueInt()
+		currentVal = zadInflatablePlugStateAnal.GetValue() as Int
 		; only increase the value up to 5, but make it count as an inflation event even if it's maximum inflated
 		if currentVal < 5			
 			currentVal += amount
@@ -848,7 +848,7 @@ Function InflateAnalPlug(actor akActor, int amount = 1)
 				currentVal = 5
 			EndIf
 			log("Setting anal plug inflation to " + (currentVal))
-			zadInflatablePlugStateAnal.SetValueInt(currentVal)
+			zadInflatablePlugStateAnal.SetValue(currentVal)
 		EndIf	
 		LastInflationAdjustmentAnal = GameDaysPassed.GetValue()
 	EndIf
@@ -864,7 +864,7 @@ Function InflateAnalPlug(actor akActor, int amount = 1)
 	if akActor == playerref && playerref.IsInCombat() 
 		return 
 	Endif	
-	If aroused.GetActorExposure(akActor) < 90 || zadInflatablePlugStateAnal.GetValueInt() < 3
+	If aroused.GetActorExposure(akActor) < 90 || zadInflatablePlugStateAnal.GetValue() < 3
 		notify("Your plug makes you more horny...")
 		SexlabMoan(akActor)	
 		PlayHornyAnimation(akActor)	
@@ -882,7 +882,7 @@ Function InflateVaginalPlug(actor akActor, int amount = 1)
 	EndIf
 	int currentVal = -1
 	If akActor == PlayerRef
-		currentVal = zadInflatablePlugStateVaginal.GetValueInt()
+		currentVal = zadInflatablePlugStateVaginal.GetValue() as Int
 		; only increase the value up to 5, but make it count as an inflation event even if it's maximum inflated
 		if currentVal < 5						
 			currentVal += amount
@@ -890,7 +890,7 @@ Function InflateVaginalPlug(actor akActor, int amount = 1)
 				currentVal = 5
 			EndIf
 			log("Setting vaginal plug inflation to " + (currentVal))
-			zadInflatablePlugStateVaginal.SetValueInt(currentVal)
+			zadInflatablePlugStateVaginal.SetValue(currentVal)
 		EndIf	
 		LastInflationAdjustmentVaginal = GameDaysPassed.GetValue()
 	EndIf
@@ -906,7 +906,7 @@ Function InflateVaginalPlug(actor akActor, int amount = 1)
 	if akActor == playerref && playerref.IsInCombat() 
 		return 
 	Endif	
-	If aroused.GetActorExposure(akActor) < 90 || zadInflatablePlugStateVaginal.GetValueInt() < 3
+	If aroused.GetActorExposure(akActor) < 90 || zadInflatablePlugStateVaginal.GetValue() < 3
 		notify("Your plug makes you more horny...")
 		SexlabMoan(akActor)	
 		PlayHornyAnimation(akActor)	
@@ -944,14 +944,14 @@ Function DeflateVaginalPlug(actor akActor, int amount = 1)
 	EndIf	
 	int currentVal = -1
 	If akActor == PlayerRef
-		currentVal = zadInflatablePlugStateVaginal.GetValueInt()		
+		currentVal = zadInflatablePlugStateVaginal.GetValue() as Int
 		if currentVal > 0
 			currentVal -= amount
 			if currentVal < 0
 				currentVal = 0
 			EndIf
 			log("Setting vaginal plug inflation to " + (currentVal))
-			zadInflatablePlugStateVaginal.SetValueInt(currentVal)
+			zadInflatablePlugStateVaginal.SetValue(currentVal)
 		EndIf	
 		LastInflationAdjustmentVaginal = GameDaysPassed.GetValue()	
 	EndIf
@@ -965,14 +965,14 @@ Function DeflateAnalPlug(actor akActor, int amount = 1)
 	EndIf	
 	int currentVal = -1
 	If akActor == PlayerRef
-		currentVal = zadInflatablePlugStateAnal.GetValueInt()		
+		currentVal = zadInflatablePlugStateAnal.GetValue() as Int
 		if currentVal > 0
 			currentVal -= amount
 			if currentVal < 0
 				currentVal = 0
 			EndIf
 			log("Setting anal plug inflation to " + (currentVal))
-			zadInflatablePlugStateAnal.SetValueInt(currentVal)
+			zadInflatablePlugStateAnal.SetValue(currentVal)
 		EndIf	
 		LastInflationAdjustmentAnal = GameDaysPassed.GetValue()	
 	EndIf
@@ -2236,9 +2236,9 @@ EndFunction
 
 Function AttrDrain(actor akActor, string attr)
 	float randomize = (Utility.RandomInt(1,75) as Float) / 100
-	int drain = (akActor.GetAv(attr) * randomize) as Int
+	int drain = (akActor.GetActorValue(attr) * randomize) as Int
 	Log(attr+"DrainEffect(): Draining "+drain + "("+randomize+" %)")
-	akActor.DamageAv(attr, drain)
+	akActor.DamageActorValue(attr, drain)
 EndFunction
 
 
@@ -2760,8 +2760,8 @@ EndFunction
 ; prevent dialogue from becoming stuck.
 ; 
 Function ResetDialogue()
-	DialogueGagDisable.SetValueInt(0)
-	DialogueArmbinderDisable.SetValueInt(0)
+	DialogueGagDisable.SetValue(0)
+	DialogueArmbinderDisable.SetValue(0)
 EndFunction
 
 ; Adds the actor to the faction that disables the built in gag

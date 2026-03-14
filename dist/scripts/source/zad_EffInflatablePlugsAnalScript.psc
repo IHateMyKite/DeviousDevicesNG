@@ -69,8 +69,8 @@ endfunction
 
 Event OnUpdate()	
 	if !Terminate
-		If (libs.GameDaysPassed.GetValue() - libs.LastInflationAdjustmentAnal) * 24.0 > 5.0 && (libs.zadInflatablePlugStateAnal.GetValueInt() > 0)
-			libs.zadInflatablePlugStateAnal.SetValueInt(libs.zadInflatablePlugStateAnal.GetValueInt() - 1)
+		If (libs.GameDaysPassed.GetValue() - libs.LastInflationAdjustmentAnal) * 24.0 > 5.0 && (libs.zadInflatablePlugStateAnal.GetValue() > 0)
+			libs.zadInflatablePlugStateAnal.SetValue(libs.zadInflatablePlugStateAnal.GetValue() - 1)
 			libs.notify("Your inflatable plugs lose some pressure...")
 			libs.LastInflationAdjustmentAnal = libs.GameDaysPassed.GetValue()
 			DoRegister()
@@ -105,7 +105,7 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 	EndIf
 	Target = akTarget
 	Terminate = False	
-	libs.zadInflatablePlugStateAnal.SetValueInt(0)
+	libs.zadInflatablePlugStateAnal.SetValue(0)
 	libs.LastInflationAdjustmentAnal = libs.GameDaysPassed.GetValue()
 	DoStart()
 EndEvent

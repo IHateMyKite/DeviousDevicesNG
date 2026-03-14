@@ -404,7 +404,7 @@ Function Test()
 	return
 	ObjectReference objr = Game.GetCurrentCrosshairRef()	
 	Actor act = objr As Actor	
-	If act && act == Game.GetPlayer()		
+	If act == libs.PlayerRef
 		; sanity check
 		return
 	EndIf	
@@ -432,7 +432,7 @@ EndFunction
 Function FurnitureActionV2(Bool AllowActorInScene = false)
 	ObjectReference objr = Game.GetCurrentCrosshairRef()
 	Actor act = objr As Actor	
-	If act && act == Game.GetPlayer()		
+	If act == libs.PlayerRef
 		; sanity check
 		return
 	EndIf	
@@ -456,7 +456,7 @@ Function FurnitureActionV2(Bool AllowActorInScene = false)
 			; yes, display the unlock NPC dialogue
 			debug.notification("Freeing " + act.GetActorBase().GetName())
 			; sending the player as operator, so the furniture script can tell freeing the user apart from an escape attempt!
-			obj.Activate(Game.GetPlayer())
+			obj.Activate(libs.PlayerRef)
 			return
 		EndIf
 		If !SelectedUser				

@@ -69,8 +69,8 @@ endfunction
 
 Event OnUpdate()	
 	if !Terminate
-		If (libs.GameDaysPassed.GetValue() - libs.LastInflationAdjustmentVaginal) * 24.0 > 5.0 && (libs.zadInflatablePlugStateVaginal.GetValueInt() > 0)
-			libs.zadInflatablePlugStateVaginal.SetValueInt(libs.zadInflatablePlugStateVaginal.GetValueInt() - 1)
+		If (libs.GameDaysPassed.GetValue() - libs.LastInflationAdjustmentVaginal) * 24.0 > 5.0 && (libs.zadInflatablePlugStateVaginal.GetValue() > 0)
+			libs.zadInflatablePlugStateVaginal.SetValue(libs.zadInflatablePlugStateVaginal.GetValue() - 1)
 			libs.notify("Your inflatable plugs lose some pressure...")
 			libs.LastInflationAdjustmentVaginal = libs.GameDaysPassed.GetValue()
 			DoRegister()
@@ -105,7 +105,7 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 	EndIf
 	Target = akTarget
 	Terminate = False	
-	libs.zadInflatablePlugStateVaginal.SetValueInt(0)
+	libs.zadInflatablePlugStateVaginal.SetValue(0)
 	libs.LastInflationAdjustmentVaginal = libs.GameDaysPassed.GetValue()
 	DoStart()
 EndEvent
