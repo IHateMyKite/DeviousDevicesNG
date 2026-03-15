@@ -671,7 +671,7 @@ EndFunction
 ; determines if a device in a given slot is generic (e.g. no quest device). Caution: Works for equipped devices only.
 Bool Function IsGenericDevice(Actor a, Keyword kw)
 	Armor arm = GetWornRenderedDeviceByKeyword(a, kw)	
-	if arm && arm.HasKeyword(zad_BlockGeneric) || arm.HasKeyword(zad_QuestItem)
+	if arm && (arm.HasKeyword(zad_BlockGeneric) || arm.HasKeyword(zad_QuestItem))
 		return false
 	EndIf
 	return true
