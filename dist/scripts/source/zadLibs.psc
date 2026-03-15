@@ -283,15 +283,8 @@ Keyword Property questItemRemovalAuthorizationToken = None Auto
 FormList Property zadDeviceTypes Auto	; List of all main device type keywords. Useful for iterating functions.
 FormList Property zad_AlwaysSilent Auto	; Actors in this list will ALWAYS equip or unequip DD items silently.
 
-GlobalVariable _GameDaysPassed
-GlobalVariable Property GameDaysPassed
-    GlobalVariable Function Get()
-        if !_GameDaysPassed
-            _GameDaysPassed = Game.GetForm(0x00000039) as GlobalVariable
-        endif
-        return _GameDaysPassed
-    EndFunction
-EndProperty
+GlobalVariable Property GameDaysPassed Auto
+Bool Property HasPPlus Auto Hidden
 
 ; Rechargeable Soulgem Stuff
 Soulgem Property SoulgemEmpty Auto
@@ -509,10 +502,7 @@ EndFunction
 Bool Function UnlockDeviceByKeyword(actor akActor, keyword zad_DeviousDevice, bool destroyDevice = false)
 	Log("UnlockDeviceByKeyword called for " + zad_DeviousDevice)					
 	Armor idevice = GetWornDevice(akActor, zad_DeviousDevice)
-	if UnlockDevice(akActor, idevice, zad_DeviousDevice = zad_DeviousDevice, destroyDevice = destroyDevice, genericonly = true)
-		return true
-	EndIf
-	return false
+	return UnlockDevice(akActor, idevice, zad_DeviousDevice = zad_DeviousDevice, destroyDevice = destroyDevice, genericonly = true)
 EndFunction
 
 ; Remove quest device from actor. To make sure the removal is legit this will work only if the keyword passed to the function in the RemovalToken parameter is present on the item. Standard DD and ZAP keywords will not be accepted. 
@@ -837,8 +827,9 @@ Function InflateAnalPlug(actor akActor, int amount = 1)
 		; nothing to do
 		return
 	EndIf	
+	Bool isPlayer = akActor == playerref
 	int currentVal = -1
-	If akActor == PlayerRef
+	If isPlayer
 		currentVal = zadInflatablePlugStateAnal.GetValue() as Int
 		; only increase the value up to 5, but make it count as an inflation event even if it's maximum inflated
 		if currentVal < 5			
@@ -860,7 +851,7 @@ Function InflateAnalPlug(actor akActor, int amount = 1)
 		return
 	EndIf	
 	; don't play the animation in combat if it's the player
-	if akActor == playerref && playerref.IsInCombat() 
+	if isPlayer && playerref.IsInCombat() 
 		return 
 	Endif	
 	If aroused.GetActorExposure(akActor) < 90 || zadInflatablePlugStateAnal.GetValue() < 3
@@ -879,8 +870,9 @@ Function InflateVaginalPlug(actor akActor, int amount = 1)
 		; nothing to do
 		return
 	EndIf
+	Bool isPlayer = akActor == playerref
 	int currentVal = -1
-	If akActor == PlayerRef
+	If isPlayer
 		currentVal = zadInflatablePlugStateVaginal.GetValue() as Int
 		; only increase the value up to 5, but make it count as an inflation event even if it's maximum inflated
 		if currentVal < 5						
@@ -902,7 +894,7 @@ Function InflateVaginalPlug(actor akActor, int amount = 1)
 		return
 	EndIf	
 	; don't play the animation in combat if it's the player
-	if akActor == playerref && playerref.IsInCombat() 
+	if isPlayer && playerref.IsInCombat() 
 		return 
 	Endif	
 	If aroused.GetActorExposure(akActor) < 90 || zadInflatablePlugStateVaginal.GetValue() < 3
@@ -917,8 +909,10 @@ Function InflateVaginalPlug(actor akActor, int amount = 1)
 EndFunction
 
 Function InflateRandomPlug(actor akActor, int amount = 1)
+	Bool inflateV = akActor.WornHasKeyword(zad_kw_InflatablePlugVaginal)
+	Bool inflateA = akActor.WornHasKeyword(zad_kw_InflatablePlugAnal)
 	; pick one randomly if both are worn:
-	If akActor.WornHasKeyword(zad_kw_InflatablePlugVaginal) && akActor.WornHasKeyword(zad_kw_InflatablePlugAnal)
+	If inflateV && inflateA
 		If Utility.RandomInt(1,2) == 1
 			InflateVaginalPlug(akActor, amount)
 		Else
@@ -926,11 +920,11 @@ Function InflateRandomPlug(actor akActor, int amount = 1)
 		EndIf
 		return
 	EndIf
-	If akActor.WornHasKeyword(zad_kw_InflatablePlugVaginal)
+	If inflateV
 		InflateVaginalPlug(akActor, amount)
 		return
 	EndIf
-	If akActor.WornHasKeyword(zad_kw_InflatablePlugAnal)
+	If inflateA
 		InflateAnalPlug(akActor, amount)
 		return
 	EndIf
@@ -986,11 +980,14 @@ EndFunction
 ; Function to test an NPC using certain criteria,
 bool Function ValidForInteraction(actor currenttest, int genderreq = -1, bool creatureok = false, bool animalok = false, bool beastreaceok = false, bool elderok = false, bool guardok = true)
 	log("Checking actor validity for interaction")
-	If currenttest.HasKeyword(ActorTypeNPC)		
+	Bool isNPC = currenttest.HasKeyword(ActorTypeNPC)
+	Bool isCreature = currenttest.HasKeyword(ActorTypeCreature)
+	Bool isAnimal = currenttest.HasKeyword(ActorTypeAnimal)
+	If isNPC
 		log("Processing: " + currenttest.GetLeveledActorBase().GetName() + ". Is NPC.")		
-	elseIf currenttest.HasKeyword(ActorTypeCreature) && !currenttest.HasKeyword(ActorTypeAnimal)
+	elseIf isCreature && !isAnimal
 		log("Processing: " + currenttest.GetLeveledActorBase().GetName() + ". Is Creature.")		
-	elseIf currenttest.HasKeyword(ActorTypeAnimal)		
+	elseIf isAnimal
 		log("Processing: " + currenttest.GetLeveledActorBase().GetName() + ". Is Animal.")		
 	else		
 		log("Processing: " + currenttest.GetLeveledActorBase().GetName() + ". WARNING: Type cannot be determined. Rejected!")
@@ -1004,25 +1001,27 @@ bool Function ValidForInteraction(actor currenttest, int genderreq = -1, bool cr
 		log("Rejected: " + currenttest.GetLeveledActorBase().GetName() + ". Reason: Actor is player character, follower, disabled, child, dwarven construct, a prisoner, or dead.")		
 		return false
 	endif		
-	; if it's an NPC, make sure it's correct gender
-	If genderreq > 0
-		If currenttest.HasKeyword(ActorTypeNPC) && (currenttest.GetLeveledActorBase().GetSex() != genderreq)
-			log("Rejected: " + currenttest.GetLeveledActorBase().GetName() + ". Reason: Actor is wrong gender.")				
-			return false			
-		EndIf
-	EndIf
 	; make sure it is not guard, an elder or beast race if they are disallowed
-	if currenttest.HasKeyword(ActorTypeNPC) && ((!elderok && currenttest.GetLeveledActorBase().GetRace() == ElderRace) || (!beastreaceok && currenttest.HasKeyword(isBeastRace)) || (!guardok && currenttest.IsInFaction(isGuardFaction)))		
-		log("Rejected: " + currenttest.GetLeveledActorBase().GetName() + ". Reason: Actor is disallowed guard/elder/beast race (MCM settings).")		
-		return false			
-	endif		
+	if isNPC
+		; if it's an NPC, make sure it's correct gender
+		If genderreq > 0
+			If (currenttest.GetLeveledActorBase().GetSex() != genderreq)
+				log("Rejected: " + currenttest.GetLeveledActorBase().GetName() + ". Reason: Actor is wrong gender.")				
+				return false			
+			EndIf
+		EndIf
+		If ((!elderok && currenttest.GetLeveledActorBase().GetRace() == ElderRace) || (!beastreaceok && currenttest.HasKeyword(isBeastRace)) || (!guardok && currenttest.IsInFaction(isGuardFaction)))		
+			log("Rejected: " + currenttest.GetLeveledActorBase().GetName() + ". Reason: Actor is disallowed guard/elder/beast race (MCM settings).")		
+			return false			
+		endif
+	EndIf
 	; if it's a creature, make sure they are allowed
-	if currenttest.HasKeyword(ActorTypeCreature) && !creatureok					
+	if !creatureok && isCreature
 		log("Rejected: " + currenttest.GetLeveledActorBase().GetName() + ". Reason: Actor is humanoid creature.")			
 		Return false		
 	endif	
 	; if it's a animal, make sure they are allowed
-	if currenttest.HasKeyword(ActorTypeAnimal) && !animalok
+	if !animalok && isAnimal
 		log("Rejected: " + currenttest.GetLeveledActorBase().GetName() + ". Reason: Actor is animal.")	
 		Return false		
 	endif	
@@ -1075,10 +1074,7 @@ EndFunction
 
 Bool Function HasBreastsExposed(Actor a)
 	Form arm = a.GetWornForm(0x00000004)
-	if !arm || a.WornHasKeyword(zad_ExposedBreasts)
-		return true
-	endif
-	return false
+	return !arm || a.WornHasKeyword(zad_ExposedBreasts)
 EndFunction
 
 ;====================
@@ -1330,10 +1326,7 @@ bool Function WearingConflictingDevice(actor akActor, armor deviceRendered, keyw
 	if akActor == none
 		Error("WearingConflictingDevice received none argument.")
 	EndIf
-	if akActor.GetItemCount(deviceRendered)==0 && akActor.WornHasKeyword(zad_DeviousDevice)
-		return true
-	Endif
-	return false
+	return akActor.GetItemCount(deviceRendered)==0 && akActor.WornHasKeyword(zad_DeviousDevice)
 EndFunction
 
 
@@ -1363,7 +1356,7 @@ Function UpdateExposure(actor akRef, float val, bool skipMultiplier=false)
 		
 	Else
 		float rate = Aroused.GetActorExposureRate(akRef)
-		int newRank = (lastRank + (val as float) * rate) as int	
+		int newRank = (lastRank + val * rate) as int	
 		Aroused.SetActorExposure(akRef, newRank)
 	EndIf
 EndFunction
@@ -1389,18 +1382,12 @@ EndFunction
 
 
 Function SendDeviceRemovalEvent(string deviceName, actor akActor)
-	int isPlayer = 0
-	if akActor == PlayerRef
-		isPlayer = 1
-	EndIf
+	int isPlayer = (akActor == PlayerRef) as Int
 	SendDeviceEvent("DeviceRemoved"+deviceName, akActor.GetLeveledActorBase().GetName(), isPlayer)
 EndFunction
 
 Function SendDeviceEquippedEvent(string deviceName, actor akActor)
-	int isPlayer = 0
-	if akActor == PlayerRef
-		isPlayer = 1
-	EndIf
+	int isPlayer = (akActor == PlayerRef) as Int
 	SendDeviceEvent("DeviceEquipped"+deviceName, akActor.GetLeveledActorBase().GetName(), isPlayer)
 EndFunction
 
@@ -1502,48 +1489,46 @@ Function DDI_DebugFixDevices()
 	bool clearAll = True
 	While i > 0			
 		i -= 1
-		kForm = PlayerRef.GetNthForm(i)	
-		If (kForm As Armor)
-			if kForm.HasKeyword(zad_InventoryDevice) && PlayerRef.IsEquipped(kForm)
-				idevice = kForm As Armor
-				if idevice
-					ObjectReference tmpORef = PlayerRef.placeAtMe(kForm, abInitiallyDisabled = true)
-					zadEquipScript tmpZRef = tmpORef as zadEquipScript
-					if tmpZRef != none && PlayerRef.GetItemCount(tmpZRef.deviceRendered) > 0
-						rdevice = tmpZRef.deviceRendered as Armor
-						zadTemporaryDeviceStorage.AddForm(rdevice)
-						clearAll = False
-					Endif
-					tmpORef.delete()
+		idevice = PlayerRef.GetNthForm(i) As Armor
+		If idevice
+			if idevice.HasKeyword(zad_InventoryDevice) && PlayerRef.IsEquipped(idevice)
+				ObjectReference tmpORef = PlayerRef.placeAtMe(idevice, abInitiallyDisabled = true)
+				zadEquipScript tmpZRef = tmpORef as zadEquipScript
+				if tmpZRef != none && PlayerRef.GetItemCount(tmpZRef.deviceRendered) > 0
+					rdevice = tmpZRef.deviceRendered as Armor
+					zadTemporaryDeviceStorage.AddForm(rdevice)
+					clearAll = False
 				Endif
+				tmpORef.delete()
 			Endif
 		Endif
 	EndWhile
 	i = PlayerRef.GetNumItems()
 	While i > 0			
 		i -= 1
-		kForm = PlayerRef.GetNthForm(i)
-		if (kForm As Armor)
-			if kForm.HasKeyword(zad_Lockable) && !kForm.HasKeyword(zad_InventoryDevice)
-				Int c = PlayerRef.GetItemCount(kForm)
+		idevice = PlayerRef.GetNthForm(i) as Armor
+		if idevice
+			if idevice.HasKeyword(zad_Lockable) && !idevice.HasKeyword(zad_InventoryDevice)
+				Int c = PlayerRef.GetItemCount(idevice)
 				if clearAll
-					PlayerRef.RemoveItem(kForm,c,true)
+					PlayerRef.RemoveItem(idevice,c,true)
 				else
 					Int j = zadTemporaryDeviceStorage.GetSize()
 					bool removeRendered = True
 					while j > 0
 						j -= 1
 						rdevice = zadTemporaryDeviceStorage.GetAt(j) as Armor
-						if rdevice == kForm
+						if rdevice == idevice
 							removeRendered = False
+							j = 0
 						EndIf
 					EndWhile
 					if removeRendered
-						PlayerRef.RemoveItem(kForm,c,true)
+						PlayerRef.RemoveItem(idevice,c,true)
 						RemovedItems += c
 					elseif c > 1
-						c = c - 1
-						PlayerRef.RemoveItem(kForm,c,true)
+						c -= 1
+						PlayerRef.RemoveItem(idevice,c,true)
 						RemovedItems += c
 					Endif
 				Endif
@@ -1561,49 +1546,42 @@ Function DDI_DebugTerminate()
 	log("DDI_DebugTerminate called. Removing devices.")
 	Notify("DDI Debug Terminate signal triggered.\nAttempting to clear all DD items, including quest devices.", MessageBox = True)	
 	Utility.Wait(1)
-	Armor idevice = None
-	Armor rdevice = None
-	Keyword kw = None
-	Keyword token = None
 	if !PlayerRef.WornHasKeyword(zad_Lockable)
 		; no DD items equipped, can abort here
 		Notify("No DD items found on the player. Aborting.", MessageBox = True)	
 		return
 	endif			
+	Armor idevice = None
+	Armor rdevice = None
+	Keyword kw = None
+	Keyword token = None
 	Int i = PlayerRef.GetNumItems()
 	While i > 0			
 		i -= 1
-		Form kForm = PlayerRef.GetNthForm(i)	
-		If (kForm As Armor)
-			if kForm.HasKeyword(zad_InventoryDevice)
-				idevice = kForm As Armor
-				if idevice
-					rdevice = GetRenderedDevice(idevice)
-					kw = GetDeviceKeyword(idevice)
-					If idevice && rdevice && kw
-						; we got a valid DD item here, let's remove it
-						If idevice.HasKeyword(zad_QuestItem) || rdevice.HasKeyword(zad_QuestItem)
-							; It's a quest item, so we need a token to pass the checks. This is the only way I am aware of to remove 3rd party quest items. And again, I don't want to see content mods doing that.
-							Int k = rdevice.GetNumKeywords()
-							Bool done = false
-							Keyword dKeyword
-							While k > 0 && !done
-								k -= 1
-								dKeyword = rdevice.GetNthKeyword(k)
-								if dKeyword && !zadStandardKeywords.HasForm(dKeyword)
-									token = dKeyword
-									done = true
-								EndIf	
-							EndWhile
-							if token
-								RemoveQuestDevice(PlayerRef, idevice, rdevice, kw, token, destroyDevice = true, skipMutex = true)
-							EndIf
-						Else
-							removeDevice(PlayerRef, idevice, rdevice, kw, destroyDevice = true, skipevents = false, skipmutex = true)			
-						EndIf
-						Utility.Wait(1)
+		idevice = PlayerRef.GetNthForm(i) As Armor
+		If idevice && idevice.HasKeyword(zad_InventoryDevice)
+			rdevice = GetRenderedDevice(idevice)
+			kw = GetDeviceKeyword(idevice)
+			If rdevice && kw
+				; we got a valid DD item here, let's remove it
+				If idevice.HasKeyword(zad_QuestItem) || rdevice.HasKeyword(zad_QuestItem)
+					; It's a quest item, so we need a token to pass the checks. This is the only way I am aware of to remove 3rd party quest items. And again, I don't want to see content mods doing that.
+					Int k = rdevice.GetNumKeywords()
+					Keyword dKeyword
+					While k > 0 && !token
+						k -= 1
+						dKeyword = rdevice.GetNthKeyword(k)
+						if dKeyword && !zadStandardKeywords.HasForm(dKeyword)
+							token = dKeyword
+						EndIf	
+					EndWhile
+					if token
+						RemoveQuestDevice(PlayerRef, idevice, rdevice, kw, token, destroyDevice = true, skipMutex = true)
 					EndIf
-				Endif			
+				Else
+					removeDevice(PlayerRef, idevice, rdevice, kw, destroyDevice = true, skipevents = false, skipmutex = true)			
+				EndIf
+				Utility.Wait(1)
 			EndIf
 		EndIf
 	EndWhile
@@ -1619,15 +1597,17 @@ EndFunction
 
 function Masturbate(actor a, bool feedback = false)	
 	sslBaseAnimation[] Manims 
-	If a == PlayerRef && feedback
-		NotifyPlayer("You cannot resist your urges anymore!")
-	Else
-		If a.GetLeveledActorBase().GetSex() == 1 && feedback
-			NotifyPlayer(a.GetLeveledActorBase().GetName() + " can't resist her urges anymore...")
-		ElseIf a.GetLeveledActorBase().GetSex() == 0 && feedback
-			NotifyPlayer(a.GetLeveledActorBase().GetName() + " can't resist his urges anymore...")
-		Endif
-	EndIf	
+	If feedback
+		If a == PlayerRef
+			NotifyPlayer("You cannot resist your urges anymore!")
+		Else
+			If a.GetLeveledActorBase().GetSex() == 1
+				NotifyPlayer(a.GetLeveledActorBase().GetName() + " can't resist her urges anymore...")
+			Else
+				NotifyPlayer(a.GetLeveledActorBase().GetName() + " can't resist his urges anymore...")
+			Endif
+		EndIf
+	EndIf
 	If a.WornHasKeyword(zad_DeviousArmbinder)
 		Manims = New sslBaseAnimation[1]
 		Manims[0] = SexLab.GetAnimationObject("DDArmbinderSolo")
@@ -2041,7 +2021,8 @@ int Function VibrateEffectV2(actor akActor, int vibStrength, int duration, bool 
 	Log("VibrateEffect("+vibStrength +" for "+duration+" sec). VibrateMult: "+numVibratorsMult)
 	
 	bool actorIsPlayer = (akActor == PlayerRef)
-	if !silent && actorIsPlayer
+	Bool verbose = !silent && actorIsPlayer
+	if verbose
 		string msg = BuildVibrationString(akActor, vibStrength, vPlug, aPlug, vPiercings, nPiercings)
 		NotifyPlayer(msg)
 	Endif
@@ -2105,7 +2086,7 @@ int Function VibrateEffectV2(actor akActor, int vibStrength, int duration, bool 
 							msID = -1
 						endIf
 						StopVibrating(akActor)
-						if !silent && actorIsPlayer
+						if verbose
 							NotifyPlayer("The vibrations abruptly stop just short of bringing you to orgasm.")
 						Endif
 						EdgeActor(akActor)
@@ -2114,7 +2095,7 @@ int Function VibrateEffectV2(actor akActor, int vibStrength, int duration, bool 
 					Else
 						; Orgasm. Continue VibrateEffect.
 						actorCame += 1
-						if !silent && actorIsPlayer
+						if verbose
 							string o_msg = BuildVibrationOrgasmString(akActor, vibStrength, vPlug, aPlug, vPiercings, nPiercings)
 							NotifyPlayer(o_msg)
 						EndIf
@@ -2191,7 +2172,7 @@ int Function VibrateEffectV2(actor akActor, int vibStrength, int duration, bool 
 		vibAnimStarted = 0
 	EndIf
 	StopVibrating(akActor)
-	if !silent && actorIsPlayer
+	if verbose
 		NotifyPlayer(BuildPostVibrationString(akActor, vibStrength, vPlug, aPlug, vPiercings, nPiercings))
 	Endif
 	SendModEvent("DeviceVibrateEffectStop", akActor.GetLeveledActorBase().GetName(), vibStrength * numVibratorsMult)
@@ -2234,7 +2215,7 @@ Sound Function GetVibrateSound(int vibStrength)
 EndFunction
 
 Function AttrDrain(actor akActor, string attr)
-	float randomize = (Utility.RandomInt(1,75) as Float) / 100
+	float randomize = Utility.RandomInt(1,75) / 100
 	int drain = (akActor.GetActorValue(attr) * randomize) as Int
 	Log(attr+"DrainEffect(): Draining "+drain + "("+randomize+" %)")
 	akActor.DamageActorValue(attr, drain)
@@ -2257,12 +2238,7 @@ EndFunction
 
 
 Bool Function ShouldEdgeActor(actor akActor)
-	if ActorHasKeyword(akActor, zad_EffectEdgeOnly)
-		return true
-	ElseIf ActorHasKeyword(akActor, zad_EffectEdgeRandom) && Utility.RandomInt() >= 25
-		return true
-	EndIf
-	return false
+	return ActorHasKeyword(akActor, zad_EffectEdgeOnly) || (ActorHasKeyword(akActor, zad_EffectEdgeRandom) && Utility.RandomInt() >= 25)
 EndFunction
 
 Bool Function ActorHasKeyword(actor akActor, keyword kwd)
@@ -2281,9 +2257,10 @@ Function SpellCastVibrate(Actor akActor, Form tmp)
 		SendModEvent("EventOnCast")
 		Log("OnSpellCast()")
 		If akActor == PlayerRef && akActor.GetCombatState() >= 1
+			Float currentRealTime = Utility.GetCurrentRealTime()
 			; punish her only every so often
-			if (Utility.GetCurrentRealTime() > SpellCastVibrateCooldown)					
-				SpellCastVibrateCooldown = Utility.GetCurrentRealTime() + 60 ; 60 seconds cooldown
+			if (currentRealTime > SpellCastVibrateCooldown)					
+				SpellCastVibrateCooldown = currentRealTime + 60 ; 60 seconds cooldown
 			else
 				return
 			endif		
@@ -2391,10 +2368,7 @@ EndFunction
 ;==================================================
 ; Is the actor animating through Sexlab, or DD?
 bool Function IsAnimating(actor akActor)
-	if (akActor.GetSitState() != 0) || akActor.IsOnMount()
-		return True
-	endif
-	return (akActor.IsInFaction(zadAnimatingFaction) || akActor.IsInFaction(Sexlab.AnimatingFaction))
+	return (akActor.GetSitState() != 0) || akActor.IsOnMount() || (akActor.IsInFaction(zadAnimatingFaction) || akActor.IsInFaction(Sexlab.AnimatingFaction))
 EndFunction
 
 ; Set DD's actor animating status.
@@ -2491,7 +2465,8 @@ Function RepopulateNpcs()
 		Log("RepopulateNpcs(): In menu mode, aborting.")
 		return
 	EndIf
-	if Utility.GetCurrentRealTime() - lastRepopulateTime < 10
+	Float currentRealTime = Utility.GetCurrentRealTime()
+	if currentRealTime - lastRepopulateTime < 10
 		Log("RepopulateNpcs(): Skipping due to recent cell change.")
 		return
 	EndIf
@@ -2502,12 +2477,12 @@ Function RepopulateNpcs()
 	EndIf
 	repopulateMutex=true
 	Log("RepopulateNpcs()")
-	if Utility.GetCurrentRealTime() - lastRepopulateTime <= 5
+	if currentRealTime - lastRepopulateTime <= 5
 		Log("Aborting repopulation of NPC slots: Hit throttle.")
 		repopulateMutex=false
 		return
 	EndIf
-	lastRepopulateTime = Utility.GetCurrentRealTime()
+	lastRepopulateTime = currentRealTime
 	if zadNPCQuest.IsProcessing
 		Log("Waiting, since NPC Events is currently processing.")
 		int timeout = 0
@@ -2708,20 +2683,25 @@ EndFunction
 ; putting stuff there no longer does anything, it's kept for backwards-compatibility but should be removed eventually
 Function ApplyBoundAnim(actor akActor, idle theIdle = None)
 	Log("ApplyBoundAnim()")
-	if akActor.GetEquippedWeapon()
-		akActor.UnequipItem(akActor.GetEquippedWeapon(), false, true)
+	Weapon eWeapon = akActor.GetEquippedWeapon()
+	if eWeapon
+		akActor.UnequipItem(eWeapon, false, true)
 	EndIf
-	if akActor.GetEquippedWeapon(True)
-		akActor.UnequipItem(akActor.GetEquippedWeapon(true), false, true)
+	eWeapon = akActor.GetEquippedWeapon(True)
+	if eWeapon
+		akActor.UnequipItem(eWeapon, false, true)
 	EndIf
-	If akActor.GetEquippedShield()
-		akActor.UnequipItem(akActor.GetEquippedShield(), false, true)
+	Armor eArmor = akActor.GetEquippedShield()
+	If eArmor
+		akActor.UnequipItem(eArmor, false, true)
 	EndIf
-	if akActor.GetEquippedSpell(0)
-		akActor.UnequipSpell(akActor.GetEquippedSpell(0), 0)
+	Spell eSpell = akActor.GetEquippedSpell(0)
+	if eSpell
+		akActor.UnequipSpell(eSpell, 0)
 	EndIf
-	if akActor.GetEquippedSpell(1)
-		akActor.UnequipSpell(akActor.GetEquippedSpell(1), 1)
+	eSpell = akActor.GetEquippedSpell(1)
+	if eSpell
+		akActor.UnequipSpell(eSpell, 1)
 	EndIf
 	if akActor.IsWeaponDrawn()
 		if config.UseBoundCombat
@@ -2729,9 +2709,7 @@ Function ApplyBoundAnim(actor akActor, idle theIdle = None)
 		EndIf
 		akActor.SheatheWeapon()
 	EndIf
-	if akActor.IsOnMount()
-		akActor.Dismount()
-	EndIf
+	akActor.Dismount()
 EndFunction
 
 ; Turns off dialogue processing. Note that Pausing uses a reference counting

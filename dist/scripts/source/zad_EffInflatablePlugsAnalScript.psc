@@ -43,55 +43,49 @@ Function DoUnregister()
 	EndIf	
 EndFunction
 
-bool Function isInHomeorJail()
-	Location loc = libs.PlayerRef.GetCurrentLocation()
-    if loc != none && (loc.haskeyword(loctypeplayerhome) || loc.haskeyword(loctypejail) ) 
-        return true
-    endif    
-    return false
+bool Function isInHomeorJail(Location loc)
+	Return loc != none && (loc.haskeyword(loctypeplayerhome) || loc.haskeyword(loctypejail) ) 
 endfunction
 
-bool Function isInCity()
-	Location loc = libs.PlayerRef.GetCurrentLocation()
-    if loc != none && (loc.haskeyword(loctypecity) || loc.haskeyword(loctypetown) || loc.haskeyword(loctypehabitation) || loc.haskeyword(loctypedwelling))        
-        return true
-    endif    
-    return false
+bool Function isInCity(Location loc)
+	Return loc != none && (loc.haskeyword(loctypecity) || loc.haskeyword(loctypetown) || loc.haskeyword(loctypehabitation) || loc.haskeyword(loctypedwelling))
 endfunction
 
-bool Function isInHold()  
-	Location loc = libs.PlayerRef.GetCurrentLocation() 
-    if !libs.PlayerRef.GetParentCell().IsInterior() && (loc == none || loc.haskeyword(loctypehold))
-        return true
-    endif    
-    return false
+bool Function isInHold(Location loc)  
+	Return !Target.GetParentCell().IsInterior() && (loc == none || loc.haskeyword(loctypehold))
 endfunction
 
 Event OnUpdate()	
 	if !Terminate
-		If (libs.GameDaysPassed.GetValue() - libs.LastInflationAdjustmentAnal) * 24.0 > 5.0 && (libs.zadInflatablePlugStateAnal.GetValue() > 0)
-			libs.zadInflatablePlugStateAnal.SetValue(libs.zadInflatablePlugStateAnal.GetValue() - 1)
-			libs.notify("Your inflatable plugs lose some pressure...")
-			libs.LastInflationAdjustmentAnal = libs.GameDaysPassed.GetValue()
-			DoRegister()
-			return
+		Float day = (libs.GameDaysPassed.GetValue() - libs.LastInflationAdjustmentAnal) * 24.0
+		If day > 5.0
+			Float plugState = libs.zadInflatablePlugStateAnal.GetValue()
+			If (plugState > 0)
+				libs.zadInflatablePlugStateAnal.SetValue(plugState - 1)
+				libs.notify("Your inflatable plugs lose some pressure...")
+				libs.LastInflationAdjustmentAnal = libs.GameDaysPassed.GetValue()
+				DoRegister()
+				return
+			EndIf
 		EndIf
-		if !libs.playerRef.IsInCombat() && !libs.IsAnimating(libs.playerRef) && !libs.playerref.IsOnMount() && !libs.playerref.IsSwimming() && !isInHomeorJail() && (isInCity() || isInHold()) && !UI.IsMenuOpen("Dialogue Menu")
-			; look for people that 'accidentally' inflate the plugs
-			If Utility.RandomInt() < 25 && (libs.GameDaysPassed.GetValue() - libs.LastInflationAdjustmentAnal) * 24.0 > 1.0 ; can't happen more than once in a while
-				libs.log("Inflatable Plugs: Testing for valid NPC.")
-				Actor currenttest		
-				currenttest = Game.FindRandomActorFromRef(libs.playerRef, 350.0)
-				if currenttest && libs.ValidForInteraction(currenttest, genderreq = -1, creatureok = false, animalok = false, beastreaceok = true, elderok = true, guardok = true)
-					libs.notify(currenttest.GetActorBase().GetName() + " gives your plug pump a squeeze, inflating it inside you!")
-					libs.InflateRandomPlug(libs.playerref, 1)
-				ElseIf Utility.RandomInt() < 10 ; when there is nobody there, she has a small chance to do it herself:
-					libs.notify("You 'accidentally' give your plug pump a squeeze...")
-					libs.InflateRandomPlug(libs.playerref, 1)
+		if !Target.IsInCombat() && !libs.IsAnimating(Target) && !Target.IsOnMount() && !Target.IsSwimming()
+			Location loc = Target.GetCurrentLocation()
+			If !isInHomeorJail(loc) && (isInCity(loc) || isInHold(loc)) && !UI.IsMenuOpen("Dialogue Menu")
+				; look for people that 'accidentally' inflate the plugs
+				If Utility.RandomInt() < 25 && day > 1.0 ; can't happen more than once in a while
+					libs.log("Inflatable Plugs: Testing for valid NPC.")
+					Actor currenttest = Game.FindRandomActorFromRef(Target, 350.0)
+					if currenttest && libs.ValidForInteraction(currenttest, genderreq = -1, creatureok = false, animalok = false, beastreaceok = true, elderok = true, guardok = true)
+						libs.notify(currenttest.GetActorBase().GetName() + " gives your plug pump a squeeze, inflating it inside you!")
+						libs.InflateRandomPlug(Target, 1)
+					ElseIf Utility.RandomInt() < 10 ; when there is nobody there, she has a small chance to do it herself:
+						libs.notify("You 'accidentally' give your plug pump a squeeze...")
+						libs.InflateRandomPlug(Target, 1)
+					EndIf
 				EndIf
 			EndIf
 		EndIf
-		libs.Aroused.UpdateActorExposure(libs.PlayerRef, 2)
+		libs.Aroused.UpdateActorExposure(Target, 2)
 	Else ; Avoid race condition		
 	EndIf	
 	DoRegister()

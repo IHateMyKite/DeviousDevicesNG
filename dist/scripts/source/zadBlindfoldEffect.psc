@@ -77,11 +77,7 @@ EndEvent
 
 Event OnUpdate()
     if Target == Libs.PlayerRef
-        if Terminate
-            libs.ToggleCompass(true)
-        Else
-            libs.ToggleCompass(false)
-        EndIf
+        libs.ToggleCompass(Terminate)
         DoRegister()
     EndIf
 EndEvent

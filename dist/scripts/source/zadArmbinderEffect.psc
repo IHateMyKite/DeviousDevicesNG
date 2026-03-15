@@ -15,42 +15,25 @@ Int MsgCounter
 Actor Me
 
 Event OnUpdate()
-	If Me == None
-		return
-	EndIf
 	RegisterForSingleUpdate(45)
-	If (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 2.0) && (MsgCounter == 0)
-		If Me == libs.PlayerRef
-			libs.Notify("You start to get used to being tied.")
-		EndIf
+	If (MsgCounter == 0) && (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 2.0)
+		libs.Notify("You start to get used to being tied.")
 		Me.AddPerk(zad_bc_wristXPPerk_1)		
 		MsgCounter += 1
-	EndIf
-	If (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 5.0) && (MsgCounter == 1)		
-		If Me == libs.PlayerRef
-			libs.Notify("Your wrist restraints don't hurt so much anymore.")		
-		EndIf
+	ElseIf (MsgCounter == 1) && (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 5.0)
+		libs.Notify("Your wrist restraints don't hurt so much anymore.")		
 		Me.AddPerk(zad_bc_wristXPPerk_2)
 		MsgCounter += 1
-	EndIf
-	If (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 12.0) && (MsgCounter == 2)
-		If Me == libs.PlayerRef
-			libs.Notify("You don't notice your wrist restraints anymore.")		
-		EndIf
+	ElseIf MsgCounter == 2 && (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 12.0)
+		libs.Notify("You don't notice your wrist restraints anymore.")		
 		Me.AddPerk(zad_bc_wristXPPerk_3)
 		MsgCounter += 1
-	EndIf
-	If (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 24.0) && (MsgCounter == 3)
-		If Me == libs.PlayerRef
-			libs.Notify("Your wrist restraints start to feel really comfortable!")
-		EndIf
+	ElseIf MsgCounter == 3 && (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 24.0)
+		libs.Notify("Your wrist restraints start to feel really comfortable!")
 		Me.AddPerk(zad_bc_wristXPPerk_4)
 		MsgCounter += 1
-	EndIf
-	If (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 48.0) && (MsgCounter == 4)
-		If Me == libs.PlayerRef
-			libs.Notify("Wearing wrist restraints feels completely natural now!")		
-		EndIf
+	ElseIf MsgCounter == 4 && (((libs.GameDaysPassed.GetValue() - DeviceEquippedAt) * 24) > 48.0)
+		libs.Notify("Wearing wrist restraints feels completely natural now!")		
 		Me.AddPerk(zad_bc_wristXPPerk_5)
 		MsgCounter += 1
 	EndIf
@@ -66,12 +49,12 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 	If Libs.Config.UseBoundCombatPerks == False
 		return
 	EndIf
+	If akTarget != libs.PlayerRef
+		return
+	EndIf
 	Me = akTarget	
 	MsgCounter = 0	
 	DeviceEquippedAt = libs.GameDaysPassed.GetValue()	
-	If Me != libs.PlayerRef
-		return
-	EndIf
 	RegisterForSingleUpdate(45)
 	RegisterForSleep()
 EndEvent

@@ -174,10 +174,7 @@ Function Maintenance()
 	; Finish initialization
 	Rehook()
 	; Make sure nothing got stuck on a previous play-through.
-	bool showCompass = true
-	if libs.playerRef.WornHasKeyword(libs.zad_DeviousBlindfold)
-		showCompass = false
-	EndIf
+	bool showCompass = !libs.playerRef.WornHasKeyword(libs.zad_DeviousBlindfold)
 	libs.ToggleCompass(showCompass)
 	libs.SetAnimating(libs.PlayerRef, false)
 	libs.StopVibrating(libs.PlayerRef)
@@ -424,26 +421,27 @@ sslBaseAnimation[] function SelectValidDDAnimations(Actor[] Actors, int actorCou
 		permitOral = False
 	EndIf
 
+	String suppressString = getSuppressString(permitOral, permitVaginal, permitAnal, permitBoobs, !HasBoundActors, suppresstag)
+
 	;we have bound anims only for 2 actors, restraints will be unequipped in case of more actors in a scene
 	;Animations need to be processed separately, since they are not registered in SexLab
-	If actorCount == 2 && HasBoundActors
-		;handle pet suits for 2 actor scenes, presently this is the only restraint type that needs animations called directly
-		If ( Actors[0].WornHasKeyword(libs.zad_DeviousPetSuit) || Actors[1].WornHasKeyword(libs.zad_DeviousPetSuit) )
-			libs.Log("Actor(s) wearing pet suit found. Trying to set up bound animation.")
-			Sanims = New sslBaseAnimation[1]
-			Sanims[0] = GetBoundAnim(Actors, permitOral, permitVaginal, permitAnal, permitBoobs)
-			If Sanims[0] == None
-				libs.log("Error: SelectValidDDAnimations couldn't find valid bound animations.")
-				Return Sanims
-			Else
-				Return Sanims
+	If actorCount == 2
+		If HasBoundActors
+			;handle pet suits for 2 actor scenes, presently this is the only restraint type that needs animations called directly
+			If ( Actors[0].WornHasKeyword(libs.zad_DeviousPetSuit) || Actors[1].WornHasKeyword(libs.zad_DeviousPetSuit) )
+				libs.Log("Actor(s) wearing pet suit found. Trying to set up bound animation.")
+				Sanims = New sslBaseAnimation[1]
+				Sanims[0] = GetBoundAnim(Actors, permitOral, permitVaginal, permitAnal, permitBoobs)
+				If Sanims[0] == None
+					libs.log("Error: SelectValidDDAnimations couldn't find valid bound animations.")
+					Return Sanims
+				Else
+					Return Sanims
+				Endif
 			Endif
-		Endif
-	Endif
-
-	String suppressString = getSuppressString(permitOral, permitVaginal, permitAnal, permitBoobs, !HasBoundActors, suppresstag)	
-	;we need to process private animations and masturbation as a special case and also not exclude opposite gender masturbation
-	If actorCount == 1 		
+		EndIf
+	ElseIf actorCount == 1
+		;we need to process private animations and masturbation as a special case and also not exclude opposite gender masturbation
 		libs.Log("Selecting masturbation animation.")
 		If HasArmbinderNonStrict(Actors[0]) ; she is wearing an armbinder
 			Sanims = New sslBaseAnimation[1]
@@ -575,7 +573,7 @@ sslBaseAnimation[] function SelectValidAnimations(sslThreadController Controller
 		tagString = "Solo," + tagString
 		If Controller.Positions[0].GetLeveledActorBase().GetSex() == 1
 			suppressString = "M," + suppressString
-		Elseif Controller.Positions[0].GetLeveledActorBase().GetSex() == 0
+		Else
 			suppressString = "F," + suppressString
 		EndIf
 	EndIf
@@ -901,15 +899,15 @@ Bool Function StartValidDDAnimation(Actor[] SexActors, bool forceaggressive = fa
 	TogglePanelGag(SexActors, False)
 	SkipFilter = False
 	Mutex = True
-	sslBaseAnimation[] SAnims
-	SAnims = SelectValidDDAnimations(SexActors, SexActors.Length, forceaggressive = forceaggressive, includetag = includetag, suppresstag = suppresstag)
-	If Sanims.Length <= 0 && nofallbacks
-		; no animations found, and the caller didn't want fallbacks. We can abort here.
-		libs.log("SelectValidDDAnimations failed to find any animations. Fallbacks disabled, aborting.")
-		Mutex = False
-		Return False
-	EndIf
+	sslBaseAnimation[] SAnims = SelectValidDDAnimations(SexActors, SexActors.Length, forceaggressive = forceaggressive, includetag = includetag, suppresstag = suppresstag)
 	If Sanims.Length <= 0
+		If nofallbacks
+			; no animations found, and the caller didn't want fallbacks. We can abort here.
+			libs.log("SelectValidDDAnimations failed to find any animations. Fallbacks disabled, aborting.")
+			Mutex = False
+			Return False
+		EndIf
+
 		; Hide chastity
 		libs.log("SelectValidDDAnimations failed to find any animations. Removing belts.")
 		StoreBelts(SexActors)
@@ -1327,22 +1325,24 @@ Event OnAnimationEnd(int threadID, bool HasPlayer)
 	libs.Log("OnAnimationEnd()")
 	sslThreadController Controller = Sexlab.ThreadSlots.GetController(threadID)
 	actor[] actors = controller.Positions
-	sslBaseAnimation previousAnim = controller.Animation
-	int numBeltedActors = CountBeltedActors(controller.Positions)
-	if (BoundMasturbation.Find(previousAnim.name) >=0 ) && actors.length == 1
-		if actors[0]!=libs.PlayerRef
-			libs.NotifyNPC(actors[0].GetLeveledActorbase().GetName() + " ceases her efforts, looking both frustrated and aroused.")
-		else
-			libs.NotifyPlayer("With a sigh, you realize that this is futile. You cannot possibly reach yourself, bound as you are. Your struggle has left you feeling even more aroused than when you began.", true)
+	If actors.length == 1
+		sslBaseAnimation previousAnim = controller.Animation
+		int numBeltedActors = CountBeltedActors(controller.Positions)
+		if (BoundMasturbation.Find(previousAnim.name) >=0 )
+			if actors[0]!=libs.PlayerRef
+				libs.NotifyNPC(actors[0].GetLeveledActorbase().GetName() + " ceases her efforts, looking both frustrated and aroused.")
+			else
+				libs.NotifyPlayer("With a sigh, you realize that this is futile. You cannot possibly reach yourself, bound as you are. Your struggle has left you feeling even more aroused than when you began.", true)
+			Endif
+		EndIf
+		If (numBeltedActors > 0) && previousAnim.name=="DDBeltedSolo"
+			if actors[0]!=libs.PlayerRef
+				libs.NotifyNPC(actors[0].GetLeveledActorbase().GetName() + " ceases her efforts, looking both frustrated and aroused.")
+			else
+				libs.NotifyPlayer("With a sigh, you realize that this is futile. You cannot fit even a single finger beneath the cruel embrace of the belt. Your struggle has left you feeling even more aroused than when you began.", true)
+			Endif
 		Endif
 	EndIf
-	If (numBeltedActors > 0) && previousAnim.name=="DDBeltedSolo" && actors.length==1
-		if actors[0]!=libs.PlayerRef
-			libs.NotifyNPC(actors[0].GetLeveledActorbase().GetName() + " ceases her efforts, looking both frustrated and aroused.")
-		else
-			libs.NotifyPlayer("With a sigh, you realize that this is futile. You cannot fit even a single finger beneath the cruel embrace of the belt. Your struggle has left you feeling even more aroused than when you began.", true)
-		Endif
-	Endif
 	TogglePanelGag(actors, True)
 	RetrieveHeavyBondage(actors)
 	RetrieveBelts(actors)

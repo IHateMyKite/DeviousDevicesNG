@@ -76,9 +76,7 @@ EndEvent
 
 Event OnMenuClose(string MenuName)
 	; Update stored user volume settings when they close the main menu, since they may have changed them.
-	If MenuName == "Journal Menu"
-		StoreUserVolumes()
-	EndIf
+	StoreUserVolumes()
 EndEvent
 
 Function StoreUserVolumes()
