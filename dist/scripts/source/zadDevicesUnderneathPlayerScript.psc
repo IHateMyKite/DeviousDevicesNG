@@ -1,9 +1,6 @@
 Scriptname zadDevicesUnderneathPlayerScript extends ReferenceAlias
 
 zadLibs Property libs Auto
-import zadNativeFunctions
-
-Bool Property Working Auto
 
 Event OnPlayerLoadGame()
     RegisterForSingleUpdate(3.0)

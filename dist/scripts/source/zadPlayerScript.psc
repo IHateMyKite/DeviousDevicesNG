@@ -28,9 +28,9 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
     libs.log("SL scene started: Checking for gagged voices")
     sslThreadController controller = libs.SexLab.HookController(argString)
     actor[] SceneActors = libs.SexLab.HookActors(argString)
-    int i = 0
-    int actor_count = SceneActors.length
-    while i < actor_count
+    int i = SceneActors.length
+    while i > 0
+		i -= 1
         if SceneActors[i].WornHasKeyword(libs.zad_DeviousGag)
 			If libs.HasPPlus
 				If SceneActors[i].GetActorBase().GetSex() == 1 ;p+ fix
@@ -47,7 +47,6 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
         else
             libs.log(SceneActors[i].GetLeveledActorBase().GetName() + " is not gagged.")
         endif
-        i += 1
     endwhile
 EndEvent
 
@@ -79,18 +78,21 @@ Function RegisterKeys()
 EndFunction
 
 Event OnKeyDown(int keyCode)
+    If Utility.IsInMenuMode()
+        Return
+    EndIf
     ; Animation cancel
-    if keyCode == Input.GetMappedKey("Jump", 0) || keyCode == Input.GetMappedKey("Jump", 2)
-        If libs.PlayerIsInCancellableAnimation
+    If libs.PlayerIsInCancellableAnimation
+        if keyCode == Input.GetMappedKey("Jump", 0) || keyCode == Input.GetMappedKey("Jump", 2)
             ; the correct pre-anim camera state is usually local to the function starting the animation, so it's hard to get.
             ; I'll just use this for now. It won't properly restore first person, but that's really a big deal.
             bool[] camState = new bool[2]
             libs.EndThirdPersonAnimation(libs.PlayerRef, camState)
             libs.PlayerIsInCancellableAnimation = false
+        Else
+            ; This can only happen if a registered key was remapped. If so, we should re-register.
+            RegisterKeys()
         EndIf
-    Else
-        ; This can only happen if a registered key was remapped. If so, we should re-register.
-        RegisterKeys()
     EndIf
 EndEvent
 
@@ -111,7 +113,6 @@ EndEvent
 
 Event OnPlayerLoadGame()
     AddInventoryEventFilter(libs.SoulgemFilled)
-    RegisterForMenu("MapMenu")
     actor akActor = libs.PlayerRef
     libs.HasPPlus = SKSE.GetPluginVersion("SexLabUtil") >= 34340864
     libs.SpellCastVibrateCooldown = 0.0
@@ -127,7 +128,9 @@ Event OnPlayerLoadGame()
         libs.MuteOverEncumberedMSG()
     endif
     Game.UpdateHairColor()
+    RegisterForMenu("MapMenu")
     RegisterEvents()
+    RegisterKeys()
     InitGagSpeak(false)
 EndEvent
 

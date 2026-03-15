@@ -26,14 +26,12 @@ int Function OnEquippedFilter(actor akActor, bool silent=false)
 			; open belts allow putting in anal plugs.
 			return 0
 		EndIf
-		if akActor == libs.PlayerRef && !silent
-			libs.NotifyActor(strFailEquipBelt, akActor, true)
-		ElseIf  !silent
-			libs.NotifyActor("The belt " + akActor.GetLeveledActorBase().GetName() + " is wearing prevents you from inserting this plug.", akActor, true)
-		EndIf
 		if !silent
-			return 2
-		Else
+			If akActor == libs.PlayerRef
+				libs.NotifyActor(strFailEquipBelt, akActor, true)
+			Else
+				libs.NotifyActor("The belt " + akActor.GetLeveledActorBase().GetName() + " is wearing prevents you from inserting this plug.", akActor, true)
+			EndIf
 			return 0
 		EndIf
 	Endif
@@ -51,11 +49,12 @@ Function OnEquippedPre(actor akActor, bool silent=false)
 	string msg = ""
 	If !deviceKey
 		if akActor == libs.PlayerRef
-			if Aroused.GetActorExposure(akActor) < libs.ArousalThreshold("Desire")
+			Int exposure = Aroused.GetActorExposure(akActor)
+			if exposure < libs.ArousalThreshold("Desire")
 				msg = "Your hole is now filled, as is your desire for pleasure."
-			elseif Aroused.GetActorExposure(akActor) < libs.ArousalThreshold("Horny")
+			elseif exposure < libs.ArousalThreshold("Horny")
 				msg = "You slowly insert the plug inside your opening, your lust growing with every inch it slides in."
-			elseif Aroused.GetActorExposure(akActor) < libs.ArousalThreshold("Desperate")
+			elseif exposure < libs.ArousalThreshold("Desperate")
 				msg = "You insert the plug inside your opening and take great delight in the resulting feelings of pleasure."
 			else
 				msg = "Barely in control of control your own body you thrust the plug almost forcefully into the appropriate opening."
@@ -65,11 +64,12 @@ Function OnEquippedPre(actor akActor, bool silent=false)
 		EndIf
 	Else
 		if akActor == libs.PlayerRef
-			if Aroused.GetActorExposure(akActor) < libs.ArousalThreshold("Desire")
+			Int exposure = Aroused.GetActorExposure(akActor)
+			if exposure < libs.ArousalThreshold("Desire")
 				msg = "As you gently slide the plug in, you hear a sharp click and suddenly feel very full."
-			elseif Aroused.GetActorExposure(akActor) < libs.ArousalThreshold("Horny")
+			elseif exposure < libs.ArousalThreshold("Horny")
 				msg = "You slowly push the plug into your hole and let out a quiet gasp when it expands, locking itself securely in place."
-			elseif Aroused.GetActorExposure(akActor) < libs.ArousalThreshold("Desperate")
+			elseif exposure < libs.ArousalThreshold("Desperate")
 				msg = "You insert the plug inside your sensitive opening and it clicks, suddenly growing in volume and filling you with delight."
 			else
 				msg = "You impatiently thrust the plug deep into yourself and its rapid expansion makes your legs clench together instinctively."
@@ -108,11 +108,12 @@ Function RemovePlugNoLock()
 		return
 	EndIf
 	string msg = ""
-	if Aroused.GetActorExposure(libs.PlayerRef) < libs.ArousalThreshold("Desire")
+	Int exposure = Aroused.GetActorExposure(libs.PlayerRef)
+	if exposure < libs.ArousalThreshold("Desire")
 		msg = "You easily slide the plug out of your hole and feel no regret."
-	elseif Aroused.GetActorExposure(libs.PlayerRef) < libs.ArousalThreshold("Horny")
+	elseif exposure < libs.ArousalThreshold("Horny")
 		msg = "Despite the pleasure it provides, you remove the plug from your hole."
-	elseif Aroused.GetActorExposure(libs.PlayerRef) < libs.ArousalThreshold("Desperate")
+	elseif exposure < libs.ArousalThreshold("Desperate")
 		msg = "Despite your body telling you otherwise, you reluctantly pull the plug from your now well lubricated opening."
 	else
 		msg = "It takes all the willpower that you can muster to relax your muscles enough to let the plug slide out."
@@ -140,11 +141,12 @@ Function RemovePlugLock()
 	EndIf
 	string msg = ""	
 	if RemoveDeviceWithKey() 
-		if Aroused.GetActorExposure(libs.PlayerRef) < libs.ArousalThreshold("Desire")
+		Int exposure = Aroused.GetActorExposure(libs.PlayerRef)
+		if exposure < libs.ArousalThreshold("Desire")
 			msg = "You unlock the plug and it contracts, allowing you to remove it without much hassle."
-		elseif Aroused.GetActorExposure(libs.PlayerRef) < libs.ArousalThreshold("Horny")
+		elseif exposure < libs.ArousalThreshold("Horny")
 			msg = "The mechanism rumbles as it reduces the plug to a more manageable size and you slowly pull it out."
-		elseif Aroused.GetActorExposure(libs.PlayerRef) < libs.ArousalThreshold("Desperate")
+		elseif exposure < libs.ArousalThreshold("Desperate")
 			msg = "You turn the key very slowly to ease your body into letting the plug go and feel a tinge of regret as you slide it out."
 		else
 			msg = "It takes all the focus you can muster to properly disengage the plug's locking mechanism, but once you do it practically falls out of your lubricated opening."

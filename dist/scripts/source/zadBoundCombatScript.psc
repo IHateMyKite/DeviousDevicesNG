@@ -146,27 +146,24 @@ EndFunction
 ; depreciated as of 4.1 - NPC feel like wearing our devices well enough, as soon as you code it right...
 
 Function Apply_NPC_ABC(actor akActor)
-	return
-	libs.Log("Apply_NPC_ABC( " + akActor.GetLeveledActorBase().GetName() + ", UnarmedDamage: " + akActor.GetActorValue("UnarmedDamage") + " )")
+;/	libs.Log("Apply_NPC_ABC( " + akActor.GetLeveledActorBase().GetName() + ", UnarmedDamage: " + akActor.GetActorValue("UnarmedDamage") + " )")
 	ActorUtil.AddPackageOverride(akActor, NPCBoundCombatPackageSandbox, 100)
 	StorageUtil.FormListAdd(libs.zadNPCQuest, "BoundCombatActors", akActor, true)
 	ActorUtil.AddPackageOverride(akActor, NPCBoundCombatPackage, 100)
-	akActor.AddSpell(ArmbinderDebuff)
+	akActor.AddSpell(ArmbinderDebuff)/;
 EndFunction
 
 
 Function Remove_NPC_ABC(actor akActor)
-	return
-	libs.Log("Removing NPC Bound Combat Package")
+;/	libs.Log("Removing NPC Bound Combat Package")
 	akActor.RemoveSpell(ArmbinderDebuff)
 	ActorUtil.RemovePackageOverride(akActor, NPCBoundCombatPackage)
-	StorageUtil.FormListRemove(libs.zadNPCQuest, "BoundCombatActors", akActor, true)
+	StorageUtil.FormListRemove(libs.zadNPCQuest, "BoundCombatActors", akActor, true)/;
 EndFunction
 
 
 Function CleanupNPCs()
-	return
-	int i = StorageUtil.FormListCount(libs.zadNPCQuest, "BoundCombatActors")
+;/	int i = StorageUtil.FormListCount(libs.zadNPCQuest, "BoundCombatActors")
 	while (i > 0)
 		i = i - 1
 		Actor akActor = StorageUtil.FormListGet(libs.zadNPCQuest, "BoundCombatActors", i) as Actor
@@ -175,7 +172,7 @@ Function CleanupNPCs()
 		ElseIf libs.IsValidActor(akActor) && !akActor.WornHasKeyword(libs.zad_DeviousHeavyBondage)
 			Remove_NPC_ABC(akActor)
 		EndIf
-	EndWhile
+	EndWhile/;
 EndFunction
 
 

@@ -7,16 +7,9 @@ bool Function HasKeywords(actor akActor)
 	elseif !akActor.WornHasKeyword(libs.zad_DeviousSuit)
 		return false
 	else
-		string s = ""
-		armor a = libs.GetWornDevice(akActor, libs.zad_DeviousSuit)
-		if a
-			; no keyword specifically for catsuits.
-			s = a.GetName()
-			if StringUtil.Find(s, "cat") != -1
-				return true
-			endif
-		endif		
-		return false
+		armor a = zadNativeFunctions.GetWornDevice(akActor, libs.zad_DeviousSuit)
+		; no keyword specifically for catsuits.
+		return a != None && StringUtil.Find(a.GetName(), "cat") != -1
 	endif
 EndFunction
 

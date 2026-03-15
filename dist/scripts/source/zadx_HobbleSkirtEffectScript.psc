@@ -15,7 +15,7 @@ float REQSavedVal				;Saved value of the setting, returned once the dress is une
 
 bool Function GetRequiem()
 	If Game.GetModByName("Requiem.esp") != 255
-		REQExhaustion = (Game.GetFormFromFile(0x0336AD6A, "Requiem.esp") as GlobalVariable)
+		REQExhaustion = (Game.GetFormFromFile(0x36AD6A, "Requiem.esp") as GlobalVariable)
 		libs.Log("GetRequiem(): Hobble Skirt == true. Switching to Requiem compatibility mode.")
 		return True
 	Else

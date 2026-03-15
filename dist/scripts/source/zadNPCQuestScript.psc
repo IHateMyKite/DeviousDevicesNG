@@ -50,22 +50,20 @@ Event OnUpdateGameTime()
             actor akActor
             int i = 0
             while i < libs.Config.NumNpcs
-                if MonitoredNpcs[i]
-                    akActor = MonitoredNpcs[i].GetReference() as Actor
-                    if akActor && libs.IsValidActor(akActor)
-                        ; questScript.ProcessEffects(akActor)
-                        if akActor.WornHasKeyword(libs.zad_DeviousBelt)
-                            ; When I get around to adding more of these, I'll stagger it in the same way I did in zadbq00
-                            zadBaseEvent horny = libs.EventSlots.GetByName("Horny")
-                            if horny && horny.Filter(akActor)
-                                horny.Eval(akActor)
-                            EndIf
-                        Endif
-                        if akActor.WornHasKeyword(libs.zad_DeviousPlug)
-                            zadBaseEvent vibrate = libs.EventSlots.GetByName("Vibration")
-                            if vibrate && vibrate.Filter(akActor)
-                                vibrate.Eval(akActor)
-                            EndIf
+                akActor = MonitoredNpcs[i].GetReference() as Actor
+                if akActor && libs.IsValidActor(akActor)
+                    ; questScript.ProcessEffects(akActor)
+                    if akActor.WornHasKeyword(libs.zad_DeviousBelt)
+                        ; When I get around to adding more of these, I'll stagger it in the same way I did in zadbq00
+                        zadBaseEvent horny = libs.EventSlots.GetByName("Horny")
+                        if horny && horny.Filter(akActor)
+                            horny.Eval(akActor)
+                        EndIf
+                    Endif
+                    if akActor.WornHasKeyword(libs.zad_DeviousPlug)
+                        zadBaseEvent vibrate = libs.EventSlots.GetByName("Vibration")
+                        if vibrate && vibrate.Filter(akActor)
+                            vibrate.Eval(akActor)
                         EndIf
                     EndIf
                 EndIf
@@ -82,11 +80,9 @@ Event OnUpdate()
     int i = 0
     actor akActor
     while i < libs.Config.NumNpcs
-        if MonitoredNpcs[i]
-            akActor = MonitoredNpcs[i].GetReference() as Actor
-            if akActor && libs.IsValidActor(akActor)
-                ProcessArmbinderEffect(akActor)
-            EndIf
+        akActor = MonitoredNpcs[i].GetReference() as Actor
+        if akActor && libs.IsValidActor(akActor)
+            ProcessArmbinderEffect(akActor)
         EndIf
         i += 1
     EndWhile

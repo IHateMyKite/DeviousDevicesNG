@@ -227,7 +227,7 @@ Function ApplyDevices(Actor akActor)
 	While i > 0
 		i -= 1
 		If EquipDevices[i].HasKeyword(libs.zad_InventoryDevice)
-			libs.EquipDevice(akActor, EquipDevices[i], libs.GetRenderedDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False)
+			libs.EquipDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]) as Armor, libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False)
 		Else
 			akActor.EquipItem(EquipDevices[i], abSilent = True)
 		EndIf
@@ -239,7 +239,7 @@ Function RemoveDevices(Actor akActor)
 	While i > 0
 		i -= 1
 		If EquipDevices[i].HasKeyword(libs.zad_InventoryDevice)
-			libs.RemoveDevice(akActor, EquipDevices[i], libs.GetRenderedDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False, DestroyDevice = True)
+			libs.RemoveDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]) as Armor, libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False, DestroyDevice = True)
 		Else
 			akActor.UnEquipItem(EquipDevices[i], abSilent = True)
 			akActor.RemoveItem(EquipDevices[i], abSilent = True)
@@ -325,7 +325,7 @@ Function LockActor(actor act)
 			act.EquipItem(clib.zadc_NoWaitItem, True, True)
 		EndIf
 		Game.ForceThirdPerson()
-		Game.SetCameraTarget(libs.PlayerRef)
+		Game.SetCameraTarget(act)
 	EndIf			
 	clib.StoreDevice(user, self)
 	SetLockShield()	
@@ -826,7 +826,7 @@ Event OnDDCSLEnd(int tid, bool hasPlayer)
         Game.SetPlayerAIDriven()
         Game.DisablePlayerControls(abMovement = true, abFighting = true, abSneaking = true, abMenu = true,    abActivate = false, abCamSwitch = false, abLooking = false, abJournalTabs = true)
         Game.ForceThirdPerson()
-        Game.SetCameraTarget(libs.PlayerRef)
+        Game.SetCameraTarget(User)
     Else
         User.SetDontMove(True)
         User.SetRestrained(True)
@@ -849,7 +849,7 @@ Function MoveToBehind(ObjectReference akObjB, ObjectReference akObjA, Float afDi
 		Utility.wait(0.1)
 	elseif user == libs.PlayerRef
 		;akObjA.SetAngle(akObjA.GetAngleX(), akObjA.GetAngleY(), akObject.GetAngleZ()) 
-		libs.PlayerRef.SetAngle(libs.PlayerRef.GetAngleX(), libs.PlayerRef.GetAngleY(), libs.PlayerRef.GetAngleZ() + 180.0) ; rotate the player 180 degrees so the anim starts at the correct rotation
+		user.SetAngle(user.GetAngleX(), user.GetAngleY(), user.GetAngleZ() + 180.0) ; rotate the player 180 degrees so the anim starts at the correct rotation
 		Utility.wait(0.1)
 	endif
 EndFunction
@@ -860,7 +860,7 @@ Function MoveToFront(ObjectReference akObjB, ObjectReference akObjA, Float afDis
 			akObjA.SetAngle(akObjB.GetAngleX(), akObjB.GetAngleY(), akObjB.GetAngleZ())
 			akObjA.SetAngle(akObjA.GetAngleX(), akObjA.GetAngleY(), akObjA.GetAngleZ() + 180.0) 
 		elseif user == libs.PlayerRef
-			libs.PlayerRef.SetAngle(libs.PlayerRef.GetAngleX(), libs.PlayerRef.GetAngleY(), libs.PlayerRef.GetAngleZ() + 180.0) 
+			user.SetAngle(user.GetAngleX(), user.GetAngleY(), user.GetAngleZ() + 180.0) 
 			Utility.wait(0.1)
 		Endif
 EndFunction

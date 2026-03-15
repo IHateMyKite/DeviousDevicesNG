@@ -384,7 +384,7 @@ Bool Property PlayerIsInCancellableAnimation = false Auto Hidden ; Flag used to 
 Bool Function LockDevice(actor akActor, armor deviceInventory, bool force = false)
 	Log("LockDevice called for " + akActor.GetLeveledActorBase().GetName() + ": "+ deviceInventory.GetName() + ")")
 	If force
-		Keyword kw = GetDeviceKeyword(deviceInventory)
+		Keyword kw = zadNativeFunctions.GetPropertyForm(deviceInventory,"zad_DeviousDevice") as Keyword
 		if kw
 			return SwapDevices(akActor, deviceInventory, zad_DeviousDevice = kw)						
 		EndIf
@@ -418,38 +418,32 @@ Bool Function UnlockDevice(actor akActor, armor deviceInventory, armor deviceRen
 		; Same when more than one copy of a device worn is in the inventory, even for the player. 
 		; Well, the later has been considered a "known issue" for as long as DD existed, so there is that... :S
 		; Stupid Skyrim derp engine! Even force-equipping a device before calling UnEquipItem() fails 20-30% of the time, so we have to do this the hard way.		
-		Armor rDevice
-		Keyword kw		
 		if !zad_DeviousDevice
-			kw = GetDeviceKeyword(deviceInventory)
+			zad_DeviousDevice = zadNativeFunctions.GetPropertyForm(deviceInventory,"zad_DeviousDevice") as Keyword
 			; this is a slow operation - For NPC's, TRY to provide the function with the keyword if you at all can!
-		else
-			kw = zad_DeviousDevice
 		EndIf
 		if !deviceRendered
-			rdevice = GetWornRenderedDeviceByKeyword(akActor, kw)			
-		else
-			rdevice = deviceRendered
+			deviceRendered = GetWornRenderedDeviceByKeyword(akActor, zad_DeviousDevice)			
 		EndIf		
-		akActor.RemoveItem(rdevice, 1, true)
+		akActor.RemoveItem(deviceRendered, 1, true)
 		; duplicate all the crap that normally would be handled by OnUnequipped() or OnRemoveDevice(), because it won't be called in this case. Gah!!!!!!!!
-		 If (kw == zad_DeviousHeavyBondage || kw == zad_DeviousPonyGear || kw == zad_DeviousHobbleSkirt)
+		 If (zad_DeviousDevice == zad_DeviousHeavyBondage || zad_DeviousDevice == zad_DeviousPonyGear || zad_DeviousDevice == zad_DeviousHobbleSkirt)
 			log("Removing Bound Effects")
 			BoundCombat.EvaluateAA(akActor)
 		EndIf		
-		If kw == zad_DeviousGag
+		If zad_DeviousDevice == zad_DeviousGag
 			log("Removing Gag Effects")
 			RemoveGagEffect(akActor)
-			if rDevice.HasKeyWord(zad_DeviousGagPanel)
+			if deviceRendered.HasKeyWord(zad_DeviousGagPanel)
 				if akActor.GetFactionRank(zadGagPanelFaction) == 0
 					akActor.RemoveItem(zad_GagPanelPlug, 1)
 				EndIf
 				akActor.RemoveFromFaction(zadGagPanelFaction)
 			EndIf
 		EndIf
-		UnsetStoredDevice(akActor, kw)		
+		UnsetStoredDevice(akActor, zad_DeviousDevice)		
 		SendDeviceRemovalEvent(LookupDeviceType(zad_DeviousDevice), akActor)
-		SendDeviceRemovedEventVerbose(deviceInventory, kw, akActor)		
+		SendDeviceRemovedEventVerbose(deviceInventory, zad_DeviousDevice, akActor)		
 		Log("UnlockDevice: " + akActor.GetLeveledActorBase().GetName() + "'s " + deviceInventory.GetName() + " has been removed.")
 	EndIf    
 	if destroyDevice
@@ -463,16 +457,13 @@ EndFunction
 ; This function will behave like LockDevice() if no conflicting device is equipped, but it WILL be slower, if no keyword is provided.
 Bool Function SwapDevices(actor akActor, armor deviceInventory, keyword zad_DeviousDevice = none, bool destroyDevice = false, bool genericonly = true)
 	Log("SwapDevices called for " + akActor.GetLeveledActorBase().GetName() + ": "+ deviceInventory.GetName() + ")")
-	Keyword kw		
 	if !zad_DeviousDevice
-		kw = GetDeviceKeyword(deviceInventory)		
-	else
-		kw = zad_DeviousDevice
+		zad_DeviousDevice = zadNativeFunctions.GetPropertyForm(deviceInventory,"zad_DeviousDevice") as Keyword
 	EndIf	
-	Armor WornDevice = GetWornRenderedDeviceByKeyword(akActor, kw)
+	Armor WornDevice = GetWornRenderedDeviceByKeyword(akActor, zad_DeviousDevice)
 	if WornDevice
-		Armor idevice = GetWornDevice(akActor, kw)		
-		if !UnlockDevice(akActor, idevice, WornDevice, zad_DeviousDevice = kw, destroyDevice = destroyDevice, genericonly = genericonly)
+		Armor idevice = zadNativeFunctions.GetWornDevice(akActor, zad_DeviousDevice)		
+		if !UnlockDevice(akActor, idevice, WornDevice, zad_DeviousDevice = zad_DeviousDevice, destroyDevice = destroyDevice, genericonly = genericonly)
 			log("UnlockDevice() failed. Aborting.")
 			return false
 		EndIf		
@@ -501,7 +492,7 @@ EndFunction
 ; Removes a device in a given slot by providing a keyword.
 Bool Function UnlockDeviceByKeyword(actor akActor, keyword zad_DeviousDevice, bool destroyDevice = false)
 	Log("UnlockDeviceByKeyword called for " + zad_DeviousDevice)					
-	Armor idevice = GetWornDevice(akActor, zad_DeviousDevice)
+	Armor idevice = zadNativeFunctions.GetWornDevice(akActor, zad_DeviousDevice)
 	return UnlockDevice(akActor, idevice, zad_DeviousDevice = zad_DeviousDevice, destroyDevice = destroyDevice, genericonly = true)
 EndFunction
 
@@ -1560,8 +1551,8 @@ Function DDI_DebugTerminate()
 		i -= 1
 		idevice = PlayerRef.GetNthForm(i) As Armor
 		If idevice && idevice.HasKeyword(zad_InventoryDevice)
-			rdevice = GetRenderedDevice(idevice)
-			kw = GetDeviceKeyword(idevice)
+			rdevice = zadNativeFunctions.GetRenderDevice(idevice) as Armor
+			kw = zadNativeFunctions.GetPropertyForm(idevice,"zad_DeviousDevice") as Keyword
 			If rdevice && kw
 				; we got a valid DD item here, let's remove it
 				If idevice.HasKeyword(zad_QuestItem) || rdevice.HasKeyword(zad_QuestItem)
@@ -2886,13 +2877,8 @@ string Function LookupDeviceType(keyword kwd)
 EndFunction
 
 function strip(actor a, bool animate = false)
-    Spell spl
-    Weapon weap
-    Armor sh
-    Ammo amm
-    Form frm
     stripweapons(a)
-    frm = a.GetWornForm(0x00001000) ; circlet
+    Form frm = a.GetWornForm(0x00001000) ; circlet
     if frm && !frm.HasKeyWordString("SexLabNoStrip")
         a.unequipItem(frm, abSilent = true)
     endif
@@ -3074,7 +3060,7 @@ EndFunction
 ; Deprecated: Use either LockDevice() or UnlockDevice() with genericonly = true
 bool Function ManipulateGenericDevice(actor akActor, armor device, bool equipOrUnequip, bool skipEvents = false , bool skipMutex = false)
 	bool manipulated = false
-	Keyword kw = GetDeviceKeyword(device)
+	Keyword kw = zadNativeFunctions.GetPropertyForm(device,"zad_DeviousDevice") as Keyword
     Armor loc_rd = GetRenderDevice(device)
 	if loc_rd.HasKeyword(zad_BlockGeneric) || loc_rd.HasKeyword(zad_QuestItem)
 		Warn("ManipulateGenericDevice called on non-generic device.")
@@ -3348,7 +3334,7 @@ Function RegisterGenericDevice(Armor inventoryDevice, String tags)
 		return
 	endIf
 	
-	Keyword kw = GetDeviceKeyword(inventoryDevice)
+	Keyword kw = zadNativeFunctions.GetPropertyForm(inventoryDevice,"zad_DeviousDevice") as Keyword
 	if kw == none
 		return
 	endIf
@@ -3397,20 +3383,24 @@ Armor Function GetDeviceByTags(Keyword kw, String tags, bool requireAll = true, 
 	While i > 0
 		i -= 1
 		Armor current = StorageUtil.FormListGet(kw, "zad.GenericDevice", i) as Armor
-		If current && HasTags(current, tagArray, requireAll) && !HasTags(current, supArray, false)
-			resultList[n]	= current
-			n += 1
-		ElseIf current == none
+		If current
+			If HasTags(current, tagArray, requireAll) && !HasTags(current, supArray, false)
+				resultList[n]	= current
+				n += 1
+			EndIf
+		Else
 			StorageUtil.FormListRemoveAt(kw, "zad.GenericDevice", i)
 		EndIf
 	EndWhile
 	
-	if n < 1 && fallBack
-		log("No devices found with tags, falling back to random device")
-		return GetGenericDeviceByKeyword(kw)
-	ElseIf n < 1
-		log("No devices found with tags")
-		return none
+	if n < 1
+		If fallBack
+			log("No devices found with tags, falling back to random device")
+			return GetGenericDeviceByKeyword(kw)
+		Else
+			log("No devices found with tags")
+			return none
+		endIf
 	endIf
 	return resultList[Utility.RandomInt(0, n - 1)] as Armor
 EndFunction

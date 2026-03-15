@@ -355,20 +355,20 @@ Event OnUnequipped(Actor akActor)
                     If !akActor.IsEquipped(deviceInventory)
                         akActor.EquipItem(deviceInventory, false, true)
                     EndIf                
-                    if !libs.PlayerRef.IsEquipped(deviceRendered)
+                    if !akActor.IsEquipped(deviceRendered)
                         akActor.EquipItem(deviceRendered, true, true)
                     EndIf
                     StorageUtil.UnsetIntValue(akActor, "zad_RemovalOperation" + zad_DeviousDevice)
                     return
                 EndIf
-                if !libs.PlayerRef.IsEquipped(deviceRendered) && akActor.GetItemCount(deviceInventory) < 2
+                if !akActor.IsEquipped(deviceRendered) && akActor.GetItemCount(deviceInventory) < 2
                     libs.Log("Caught remove-all (rendered device missing). Re-equipping device.")
                     akActor.EquipItem(deviceRendered, true, true)
                     StorageUtil.UnsetIntValue(akActor, "zad_RemovalOperation" + zad_DeviousDevice)
                     return
                 EndIf    
                 ; Player had to unequip item to access this. Reequip it immediately, to help avoid spam-unlocks.
-                libs.PlayerRef.EquipItem(deviceInventory, false, true)
+                akActor.EquipItem(deviceInventory, false, true)
                 DeviceMenu()
             Else
                 menuDisable = false
@@ -616,10 +616,8 @@ bool Function RemoveDeviceWithKey(actor akActor = none, bool destroyDevice=false
             EndIf
             Return False
         EndIf
-        If DestroyKey
+        If DestroyKey || (libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey))
             libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)
-        elseif libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey)
-            libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)    
         EndIf    
     EndIf        
     ; could call ProcessLinkedDeviceOnUnlock(Actor akActor)    here, but there is a theoretical chance that OnUnequipped() will not be completed before the new device will get locked on, so we're just signaling OnUnequipped() to do it.
@@ -943,15 +941,14 @@ Float Function CalculateDifficultyModifier(Bool operator = true)
     EndIf
     Float val = 1.0
     Int mcmValue = libs.config.EscapeDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Int median = ((mcmLength - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
+    Int median = ((libs.config.EsccapeDifficultyList.Length - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
     Float maxModifier = 0.75 ; set this as desired - it's the maximum possible +/- modifier. It should not be larger than 1 (=100%)
     Float StepLength = maxModifier / median
     Int Steps = mcmValue - median    
     If operator
-        val = 1 + (Steps * StepLength)
+        val += (Steps * StepLength)
     Else
-        val = 1 - (Steps * StepLength)
+        val -= (Steps * StepLength)
     EndIf
     libs.log("Difficulty modifier applied: " + val + " [setting: " + mcmValue + "]")
     return val
@@ -968,15 +965,14 @@ Float Function CalculateCooldownModifier(Bool operator = true)
     EndIf
     Float val = 1.0
     Int mcmValue = libs.config.CooldownDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Int median = ((mcmLength - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
+    Int median = ((libs.config.EsccapeDifficultyList.Length - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
     Float maxModifier = 0.9 ; set this as desired - it's the maximum possible +/- modifier. It should not be larger than 1 (=100%)
     Float StepLength = maxModifier / median
     Int Steps = mcmValue - median    
     If operator
-        val = 1 + (Steps * StepLength)
+        val += (Steps * StepLength)
     Else
-        val = 1 - (Steps * StepLength)
+        val -= (Steps * StepLength)
     EndIf
     libs.log("Difficulty modifier applied: " + val + " [setting: " + mcmValue + "]")
     return val
@@ -994,8 +990,7 @@ Float Function CalculateTimerModifier(float timerMin, float timerMax)
     Float timerRange = timerMax - timerMin
     ;use escape difficulty for calculations
     Int mcmValue = libs.config.EscapeDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Float StepLength = timerRange / mcmLength
+    Float StepLength = timerRange / libs.config.EsccapeDifficultyList.Length
     ;let's call it escape chance instead - from zero to max
     float upperTargetBound = timerMax - mcmValue * StepLength
     float lowerTargetBound = timerMax - (mcmValue + 1) * StepLength
@@ -1014,8 +1009,7 @@ Float Function CalculateTimerModifier(float timerMin, float timerMax)
     ;sanity checks just because
     if val < timerMin
         val = timerMin
-    endIf
-    if val > timerMax
+    elseif val > timerMax
         val = timerMax
     endIf
     libs.log("Difficulty timer modifier applied: " + val + " [setting: " + mcmValue + "]")
@@ -1033,15 +1027,14 @@ Float Function CalculateKeyModifier(Bool operator = true)
     EndIf
     Float val = 1.0
     Int mcmValue = libs.config.KeyDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Int median = ((mcmLength - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
+    Int median = ((libs.config.EsccapeDifficultyList.Length - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
     Float maxModifier = 1 ; set this as desired - it's the maximum possible +/- modifier. It should not be larger than 1 (=100%)
     Float StepLength = maxModifier / median
     Int Steps = mcmValue - median    
     If operator
-        val = 1 + (Steps * StepLength)
+        val += (Steps * StepLength)
     Else
-        val = 1 - (Steps * StepLength)
+        val -= (Steps * StepLength)
     EndIf
     libs.log("Difficulty modifier applied: " + val + " [setting: " + mcmValue + "]")
     return val

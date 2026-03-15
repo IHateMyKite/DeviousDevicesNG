@@ -1502,7 +1502,7 @@ Event OnDDIEquipDevice(Form akActor, String DeviceType)
 		libs.log("DDI ModEvent failed. No matching device found.")
 		return
 	Endif
-	armor rDevice = libs.GetRenderedDevice(iDevice)
+	armor rDevice = zadNativeFunctions.GetRenderDevice(iDevice) as Armor
 	libs.equipDevice(a, iDevice, rDevice, Kw, skipEvents = false, skipMutex = true)
 EndEvent
 
@@ -1515,7 +1515,7 @@ Event OnDDIRemoveDevice(Form akActor, String DeviceType)
 		libs.log("DDI ModEvent failed. No valid device string or no valid actor received.")
 		return
 	Endif
-	Armor iDevice = libs.GetWornDevice(a, kw)
+	Armor iDevice = zadNativeFunctions.GetWornDevice(a, kw)
 	If !iDevice
 		libs.log("DDI ModEvent device removal failed: " + a.GetLeveledActorBase().GetName() + " is not wearing the requested device type.")
 		return

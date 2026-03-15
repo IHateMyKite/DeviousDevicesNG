@@ -6,17 +6,9 @@ bool Function HasKeywords(actor akActor)
 	elseif !akActor.WornHasKeyword(libs.zad_DeviousCollar)
 		return false
 	else
-		string s = ""
-		armor a = libs.GetWornDevice(akActor, libs.zad_DeviousCollar)
-		if a
-			; no keyword specifically for posture collars.
-			s = a.GetName()
-			if StringUtil.Find(s, "Posture") != -1
-				return true
-			endif
-		endif		
-		return false
-		;return (akActor.WornHasKeyword(libs.zad_DeviousCollar) && akActor.IsEquipped(libs.collarPosture) )
+		armor a = zadNativeFunctions.GetWornDevice(akActor, libs.zad_DeviousCollar)
+		; no keyword specifically for posture collars.
+		return a != None && StringUtil.Find(a.GetName(), "Posture") != -1
 	endif
 EndFunction
 

@@ -249,7 +249,6 @@ EndFunction
 ;sometimes look stupid, other times look good. Depends on luck :)
 Float[] Function CreateRandomExpression() global
     float[] loc_expression      = CreateEmptyExpression()
-    string  loc_strres          = ""
     int     loc_i               = 0
 
     while loc_i < loc_expression.length - 2
