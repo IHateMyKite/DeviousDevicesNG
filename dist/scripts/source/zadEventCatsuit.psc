@@ -14,7 +14,7 @@ bool Function HasKeywords(actor akActor)
 EndFunction
 
 Function Execute(actor akActor)
-	if libs.PlayerRef.IsInInterior() == 1
+	if !libs.PlayerRef.IsInInterior()
 		PlayerIsOutside()
 	else
 		PlayerIsInside()
@@ -29,7 +29,9 @@ Function PlayerIsOutside()
 	
 	;let's use vampire sun damage to determine if it really is a factor
 	;the time of day is silly for it however, let's determine that 9-15 the sun is high enough
-	if weathertype == 0 && currenthour >= 9 && currenthour <= 15 && currentsundamage == 1
+	if weathertype == -1
+		PlayerIsInside()
+	elseif weathertype == 0 && currenthour >= 9 && currenthour <= 15 && currentsundamage == 1
 		libs.NotifyPlayer("The sun on your suit makes you sweat even more.")
 	elseif weathertype == 0 && currenthour >= 9 && currenthour <= 15 && currentsundamage < 1
 		libs.NotifyPlayer("The warmth of the day makes you sweat more.")
@@ -45,8 +47,6 @@ Function PlayerIsOutside()
 		libs.NotifyPlayer("The snow melts agains your suit, you feel chilly.")
 	elseif weathertype == 3 && currenthour < 9 && currenthour > 15
 		libs.NotifyPlayer("The suit feels exceedingly cold.")
-	else
-		PlayerIsInside()
 	endif
 
 EndFunction
