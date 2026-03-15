@@ -4,8 +4,8 @@ ScriptName zadTrainingEffect extends ActiveMagicEffect
 zadLibs Property Libs Auto
 SexlabFramework Property Sexlab Auto
 
-Bool Property Terminate Auto
-actor Property Target Auto
+Bool Terminate
+actor Target
 
 ; Extend this function to set a day passed event.
 Function OnTrainingDayPassed(int daysRemaining)
@@ -97,7 +97,6 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 		libs.Log("OnEffectStart(Training): Not player, doing nothing.")
 	else
 		libs.Log("OnEffectStart(Training)")
-		Terminate = False
 		DoRegisterModEvent()
 		DoRegister()
 	EndIf

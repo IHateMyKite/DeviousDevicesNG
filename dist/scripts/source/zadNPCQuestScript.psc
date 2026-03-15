@@ -5,8 +5,8 @@ Scriptname ZadNPCQuestScript Extends  zadBaseDeviceQuest
 ReferenceAlias[] Property MonitoredNPCs Auto
 zadBQ00 Property questScript Auto
 
-Float Property LastUpdateTime Auto
-Bool Property IsProcessing Auto
+Float Property LastUpdateTime Auto Hidden
+Bool Property IsProcessing Auto Hidden
 
 Function DoRegisterGameTime()
     if GetName() == "zadNPCSlots"

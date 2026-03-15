@@ -3,17 +3,10 @@ ScriptName zadx_HobbleSkirtEffectScript extends ActiveMagicEffect
 ; Libraries
 zadLibs Property Libs Auto
 
-Float SpeedMultDifferential = 0.0
-Float TargetSpeedMult = 50.0
-Float FlatSpeedDebuff = 50.0
-Float SpeedMultRestore = 0.0
-
-bool savedINIDampen
-bool FootIKneedsreset
 bool MuJointFixneedsreset
 
-String Property NINODE_ROOT = "NPC" AutoReadOnly
-String Property NIOO_KEY = "DDPET" AutoReadOnly
+String Property NINODE_ROOT = "NPC" AutoReadOnly Hidden
+String Property NIOO_KEY = "DDPET" AutoReadOnly Hidden
 
 Actor who
 Keyword Property zad_DeviousHobbleSkirtRelaxed Auto	;extreme or relaxed speed debuff

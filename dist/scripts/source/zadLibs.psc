@@ -31,7 +31,7 @@ zadBoundCombatScript Property BoundCombat auto
 Int Property TweenMenuKey Auto
 bool Property Terminate Auto
 zadexpressionlibs Property ExpLibs auto ;expression libs
-Quest Property vrikActionsAPI = None Auto
+Quest Property vrikActionsAPI = None Auto Hidden
   
 ; Keywords
 Keyword Property zad_DeviousPlug Auto
@@ -267,7 +267,7 @@ Bool Property DeviceMutex Auto ; Prevent oddities when swapping sets of items qu
 Bool Property GlobalEventFlag Auto ; Events enabled/disabled, globally. Useful for scenes that don't want to be interrupted.
 bool Property RepopulateMutex Auto ; Avoid 2.6.3 bug
 Float Property lastRepopulateTime Auto ; Avoid 2.6.3 bug
-bool Property EnableVRSupport = False Auto
+bool Property EnableVRSupport = False Auto Hidden
   
 ; Misc
 Actor Property PlayerRef Auto
@@ -277,9 +277,9 @@ Faction Property zadNGEdgedFaction Auto ; Faction to store actors getting edged
 Spell Property ShockEffect Auto
 Float Property SpellCastVibrateCooldown Auto
 Spell Property zad_splMagickaPenalty Auto
-bool Property BoundAnimsAvailable = True Auto ; Obsolete. Bound anims are now always available, post zap 6
+bool Property BoundAnimsAvailable = True Auto Hidden; Obsolete. Bound anims are now always available, post zap 6
 FormList Property zadStandardKeywords Auto
-Keyword Property questItemRemovalAuthorizationToken = None Auto
+Keyword Property questItemRemovalAuthorizationToken = None Auto Hidden
 FormList Property zadDeviceTypes Auto	; List of all main device type keywords. Useful for iterating functions.
 FormList Property zad_AlwaysSilent Auto	; Actors in this list will ALWAYS equip or unequip DD items silently.
 
@@ -297,8 +297,8 @@ Keyword Property zad_kw_InflatablePlugAnal Auto
 Keyword Property zad_kw_InflatablePlugVaginal Auto
 GlobalVariable Property zadInflatablePlugStateAnal Auto
 GlobalVariable Property zadInflatablePlugStateVaginal Auto
-Float Property LastInflationAdjustmentVaginal = 0.0 Auto
-Float Property LastInflationAdjustmentAnal = 0.0 Auto
+Float Property LastInflationAdjustmentVaginal = 0.0 Auto Hidden
+Float Property LastInflationAdjustmentAnal = 0.0 Auto Hidden
 Message Property zad_PlugsConfirmMSG Auto
 Message Property zad_PlugsDeflatePumpsFail Auto
 

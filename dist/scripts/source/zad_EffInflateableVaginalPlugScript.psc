@@ -2,8 +2,8 @@ Scriptname zad_EffInflateableVaginalPlugScript extends activemagiceffect
 
 zadLibs Property Libs Auto
 
-Actor Property target Auto Hidden
-bool Property Terminate Auto Hidden
+Actor target
+bool Terminate
 
 ; Global properties are declared here for convenience
 Keyword Property loctypeplayerhome Auto

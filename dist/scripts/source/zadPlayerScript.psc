@@ -32,7 +32,7 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
     int actor_count = SceneActors.length
     while i < actor_count
         if SceneActors[i].WornHasKeyword(libs.zad_DeviousGag)
-			If HasPPlus
+			If libs.HasPPlus
 				If SceneActors[i].GetActorBase().GetSex() == 1 ;p+ fix
 					controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Female,Gagged", "", True))
 					libs.SexLab.OpenMouth(SceneActors[i])
