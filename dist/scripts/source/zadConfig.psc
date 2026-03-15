@@ -807,7 +807,7 @@ State DarkFogStrengthST
 		SendModEvent("zadBlindfoldEffectUpdate")
 	EndEvent
 	Event OnDefaultST()
-		darkfogStrength = 500 as Int
+		darkfogStrength = 500
 		SetSliderOptionValueST(darkfogStrength, "{0}")
 		SendModEvent("zadBlindfoldEffectUpdate")
 	EndEvent

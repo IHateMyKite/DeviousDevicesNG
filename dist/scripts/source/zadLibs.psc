@@ -263,10 +263,9 @@ Message Property zad_DD_OnPutOnDevice Auto					; Message to be displayed when th
 
 ; Internal Variables
 Armor Property deviceRemovalToken Auto         ; Internal token for removal events
-Bool Property DeviceMutex Auto ; Prevent oddities when swapping sets of items quickly.
-Bool Property GlobalEventFlag Auto ; Events enabled/disabled, globally. Useful for scenes that don't want to be interrupted.
-bool Property RepopulateMutex Auto ; Avoid 2.6.3 bug
-Float Property lastRepopulateTime Auto ; Avoid 2.6.3 bug
+Bool Property DeviceMutex Auto Hidden; Prevent oddities when swapping sets of items quickly.
+Bool Property GlobalEventFlag Auto Hidden; Events enabled/disabled, globally. Useful for scenes that don't want to be interrupted.
+Float Property lastRepopulateTime Auto Hidden; Avoid 2.6.3 bug
 bool Property EnableVRSupport = False Auto Hidden
   
 ; Misc
@@ -759,7 +758,7 @@ EndFunction
 ; Retrieves rendered device for a given inventory device
 ; Useful to check for keywords only present on the rendered device
 Armor Function GetRenderedDevice(armor device)
-    return zadNativeFunctions.GetRenderDevice(device) as Armor
+    return zadNativeFunctions.GetRenderDevice(device)
 EndFunction
 
 ; for the sake of cleaner coding
@@ -1551,7 +1550,7 @@ Function DDI_DebugTerminate()
 		i -= 1
 		idevice = PlayerRef.GetNthForm(i) As Armor
 		If idevice && idevice.HasKeyword(zad_InventoryDevice)
-			rdevice = zadNativeFunctions.GetRenderDevice(idevice) as Armor
+			rdevice = zadNativeFunctions.GetRenderDevice(idevice)
 			kw = zadNativeFunctions.GetPropertyForm(idevice,"zad_DeviousDevice") as Keyword
 			If rdevice && kw
 				; we got a valid DD item here, let's remove it
@@ -1628,9 +1627,9 @@ function Masturbate(actor a, bool feedback = false)
 		return
 	Else
 		If a.GetLeveledActorBase().GetSex() == 1
-			Manims = SexLab.GetAnimationsByTag(1, "Solo", "F", requireAll=true)
+			Manims = SexLab.GetAnimationsByTags(1, "Solo,F", requireAll=true)
 		Else
-			Manims = SexLab.GetAnimationsByTag(1, "Solo", "M", requireAll=true)
+			Manims = SexLab.GetAnimationsByTags(1, "Solo,M", requireAll=true)
 		Endif
 	Endif
 	actor[] tmp = new actor[1]
@@ -1763,9 +1762,7 @@ bool Function PlaySceneAndWait(Scene toPlay, bool forceStart=false, int timeout=
 		Utility.Wait(increment)
 	EndWhile
 	if i >= timeout
-		if toPlay.IsPlaying()
-			toPlay.Stop()
-		EndIf
+		toPlay.Stop()
 		Log("Scene timed out.")
 		return false
 	EndIf
@@ -2019,12 +2016,12 @@ int Function VibrateEffectV2(actor akActor, int vibStrength, int duration, bool 
 	Endif
 
 	; Initialize vibe sounds
-	float vibSoundVol = Config.VolumeVibrator
-	if !actorIsPlayer
-		vibSoundVol = Config.VolumeVibratorNPC
-	EndIf
 	int vsID = GetVibrateSound(vibStrength).Play(akActor)
-	Sound.SetInstanceVolume(vsID, vibSoundVol)
+	if !actorIsPlayer
+		Sound.SetInstanceVolume(vsID, Config.VolumeVibratorNPC)
+	Else
+		Sound.SetInstanceVolume(vsID, Config.VolumeVibrator)
+	EndIf
 
 	; Start base expression
 	int currentArousal = Aroused.GetActorExposure(akActor)
@@ -2243,7 +2240,6 @@ Function ApplyMagickaPenalty(actor akActor)
 EndFunction
 	
 Function SpellCastVibrate(Actor akActor, Form tmp)
-	Spell theSpell = (tmp as Spell)
 	if Utility.RandomInt() < config.EffectVibrateChance && akActor.WornHasKeyword(zad_DeviousPlug) && ActorHasKeyword(akActor, zad_EffectVibrateOnSpellCast)
 		SendModEvent("EventOnCast")
 		Log("OnSpellCast()")
@@ -2262,7 +2258,7 @@ Function SpellCastVibrate(Actor akActor, Form tmp)
 		Endif
 		Shout isShout = (tmp as Shout)
 		; Log("isShout: "+isShout)
-		int cost = theSpell.GetEffectiveMagickaCost(akActor)
+		int cost = (tmp as Spell).GetEffectiveMagickaCost(akActor)
 		if cost <= 1 && !isShout
 			return
 		EndIf
@@ -2446,33 +2442,35 @@ String Function AnimSwitchKeyword( actor akActor, string idleName )
 	Error("Failed to find valid animation for presentation.")
 EndFunction
 
+State BUSY
+	Function RepopulateNpcs()
+		Log("RepopulateNpcs() is already processing.")
+	EndFunction
+EndState
+
 Function RepopulateNpcs()
+	GoToState("BUSY"); Avoid this getting hit too quickly while comparing times.
 	; ---- SAFETY GUARD ----
 	if !PlayerRef || !PlayerRef.Is3DLoaded()
 		Log("RepopulateNpcs(): Player not fully loaded, aborting.")
+		GoToState("")
 		return
 	EndIf
 	if Utility.IsInMenuMode()
 		Log("RepopulateNpcs(): In menu mode, aborting.")
+		GoToState("")
 		return
 	EndIf
 	Float currentRealTime = Utility.GetCurrentRealTime()
 	if currentRealTime - lastRepopulateTime < 10
 		Log("RepopulateNpcs(): Skipping due to recent cell change.")
+		GoToState("")
 		return
 	EndIf
 	; ---- Safety Guard against potential VM Lockups on cell change ----
-	if repopulateMutex ; Avoid this getting hit too quickly while comparing times.
-		Log("RepopulateNpcs() is already processing.")
-		return
-	EndIf
-	repopulateMutex=true
+
 	Log("RepopulateNpcs()")
-	if currentRealTime - lastRepopulateTime <= 5
-		Log("Aborting repopulation of NPC slots: Hit throttle.")
-		repopulateMutex=false
-		return
-	EndIf
+
 	lastRepopulateTime = currentRealTime
 	if zadNPCQuest.IsProcessing
 		Log("Waiting, since NPC Events is currently processing.")
@@ -2487,13 +2485,11 @@ Function RepopulateNpcs()
 		EndIf
 	EndIf
 	if !zadNPCSlots.IsStopping() && !zadNPCSlots.IsStarting()
-		if zadNPCSlots.IsRunning()
-			zadNPCSlots.Stop()
-		EndIf
+		zadNPCSlots.Stop()
 		If config.NumNpcs>0
 			; Feels like a race condition / timing issue?
 			; Perhaps if I call a short wait (Thus suspending execution, giving the quest a chance to fully stop?), it won't occur.
-			Utility.Wait(2.0)
+			Utility.Wait(0.1)
 			zadNPCSlots.Start()
 		Else
 			Log("Not repopulating NPC slots: Feature is disabled.")
@@ -2501,7 +2497,7 @@ Function RepopulateNpcs()
 	Else
 		Warn("Not repopulating NPC slots: Quest is changing state.")
 	EndIf
-	repopulateMutex=false
+	GoToState("")
 EndFunction
 
 Function PlugPanelGag(actor akActor)
@@ -2944,9 +2940,7 @@ Event StartBoundEffects(Actor akTarget)
 	Log("OnEffectStart(): Bound Effects")
 	PlayBoundIdle()
 	RegisterForSingleUpdate(8.0)
-	if aktarget == PlayerRef
-		UpdateControls()
-	Endif
+	UpdateControls()
 EndEvent
 
 Event StopBoundEffects(Actor akTarget)

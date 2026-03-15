@@ -180,7 +180,7 @@ Function Maintenance()
 	libs.StopVibrating(libs.PlayerRef)
 	zadMagic.IsRunning = False
 	libs.DeviceMutex = false
-	libs.repopulateMutex = false
+	libs.GoToState("")
 	libs.lastRepopulateTime = 0.0
 	libs.zadNPCQuest.Maintenance()
 	libs.RepopulateNpcs()	
@@ -1079,7 +1079,7 @@ Function Logic(int threadID, bool HasPlayer)
 		sslBaseAnimation[] anims = SelectValidAnimations(Controller, originalActors.Length, previousAnim, PermitOral, PermitVaginal, PermitAnal, permitBoobs, noBindings)
 		;if we didn't get a valid animation, try fallbacks
 		If anims.Length <= 0
-			If anims.Length <= 0 && !permitVaginal
+			If !permitVaginal
 				;if it STILL doesn't work, we hide belts and plugs too
 				libs.Log("No bound animation found. Hiding chastity and plugs.")
 				StoreBelts(originalActors)
@@ -1356,7 +1356,7 @@ EndEvent
 
 function RelieveSelf()
     libs.Log("RelieveSelf()")
-    sslBaseAnimation[] anims = SexLab.GetAnimationsByTag(1, "Solo", "Masturbation", "F", requireAll=true)
+    sslBaseAnimation[] anims = SexLab.GetAnimationsByTags(1, "Solo,Masturbation,F", requireAll=true)
     if anims.length <=0
         libs.Warn("No masturbation animations available. Skipping scene.")
     else
@@ -1502,7 +1502,7 @@ Event OnDDIEquipDevice(Form akActor, String DeviceType)
 		libs.log("DDI ModEvent failed. No matching device found.")
 		return
 	Endif
-	armor rDevice = zadNativeFunctions.GetRenderDevice(iDevice) as Armor
+	armor rDevice = zadNativeFunctions.GetRenderDevice(iDevice)
 	libs.equipDevice(a, iDevice, rDevice, Kw, skipEvents = false, skipMutex = true)
 EndEvent
 

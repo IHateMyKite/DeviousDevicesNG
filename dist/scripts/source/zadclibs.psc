@@ -186,7 +186,7 @@ EndFunction
 ; Sets the timed release for a given device to x hours and activates the auto-release feature. This can also be used to renew the timer by passing ResetStartTime = True.
 ; Mind you that these settings may be overriden if the player is able to use the dialogue to place herself or an NPC in the device -after- this
 ; function was called, but she cannot after the subject was placed in the device. Use it accordingly.
-Bool Function SetTimedRelease(ObjectReference FurnitureDevice, Int Hours, Bool ResetStartTime = False)
+Function SetTimedRelease(ObjectReference FurnitureDevice, Int Hours, Bool ResetStartTime = False)
 	zadcFurnitureScript fs = FurnitureDevice as zadcFurnitureScript
 	if fs 
 		fs.isSelfBondage = True
@@ -226,7 +226,7 @@ Bool Function LockActorV2(Actor akActor, ObjectReference FurnitureDevice, Packag
 EndFunction
 
 ; Unlock an actor. This bypasses all checks normally performed (e.g. keys or lock shields)
-Bool Function UnlockActor(Actor akActor)
+Function UnlockActor(Actor akActor)
 	zadcFurnitureScript fs = GetDevice(akActor) as zadcFurnitureScript
 	if fs && fs.User		
 		fs.UnlockActor()		
@@ -432,18 +432,18 @@ Function FurnitureActionV2(Bool AllowActorInScene = false)
 			debug.notification("This device is occupied.")				
 		EndIf
 	EndIf
-	If objr.HasKeyword(zadc_FurnitureDevice) && !SelectedUser
+	;If objr.HasKeyword(zadc_FurnitureDevice) && !SelectedUser
 		; no actor selected, so we can manipulate the device instead!
 		
-	EndIf
+	;EndIf
 	If act
 		; Is the target locked in a device?
-		ObjectReference obj = GetDevice(act)
-		If obj
+		objr = GetDevice(act)
+		If objr
 			; yes, display the unlock NPC dialogue
 			debug.notification("Freeing " + act.GetActorBase().GetName())
 			; sending the player as operator, so the furniture script can tell freeing the user apart from an escape attempt!
-			obj.Activate(libs.PlayerRef)
+			objr.Activate(libs.PlayerRef)
 			return
 		EndIf
 		If !SelectedUser				

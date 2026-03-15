@@ -110,5 +110,4 @@ Event OnEffectFinish(Actor akTarget, Actor akCaster)
 		return
 	EndIf
 	Terminate = True
-	DoUnregister()
 EndEvent

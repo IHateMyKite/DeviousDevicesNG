@@ -227,7 +227,7 @@ Function ApplyDevices(Actor akActor)
 	While i > 0
 		i -= 1
 		If EquipDevices[i].HasKeyword(libs.zad_InventoryDevice)
-			libs.EquipDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]) as Armor, libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False)
+			libs.EquipDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False)
 		Else
 			akActor.EquipItem(EquipDevices[i], abSilent = True)
 		EndIf
@@ -239,7 +239,7 @@ Function RemoveDevices(Actor akActor)
 	While i > 0
 		i -= 1
 		If EquipDevices[i].HasKeyword(libs.zad_InventoryDevice)
-			libs.RemoveDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]) as Armor, libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False, DestroyDevice = True)
+			libs.RemoveDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False, DestroyDevice = True)
 		Else
 			akActor.UnEquipItem(EquipDevices[i], abSilent = True)
 			akActor.RemoveItem(EquipDevices[i], abSilent = True)
