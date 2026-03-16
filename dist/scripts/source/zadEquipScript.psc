@@ -178,8 +178,7 @@ Event OnEquipped(Actor akActor)
         libs.Log("OnEquipped aborted - item is already worn.")
         ; no need to process if the item is already worn
         return
-    EndIf
-    if akActor.GetItemCount(deviceRendered) == 0 && akActor.WornHasKeyword(zad_DeviousDevice)
+    Elseif akActor.WornHasKeyword(zad_DeviousDevice)
         libs.Log("Wearing conflicting device type:" + zad_DeviousDevice)
         menuDisable = true
         akActor.UnequipItem(deviceInventory, false, true)
@@ -187,32 +186,34 @@ Event OnEquipped(Actor akActor)
     EndIf    
     bool silently = ShouldEquipSilently(akActor)
     ; check for device conflicts
-    If !silently && (IsEquipDeviceConflict(akActor) || IsEquipRequiredDeviceConflict(akActor))
-        menuDisable = true        
-        akActor.UnequipItem(deviceInventory, false, true)
-        return
-    EndIf    
-    If !silently && akActor == libs.playerref && !akActor.WornHasKeyword(zad_DeviousDevice) && akActor.GetItemCount(deviceRendered) == 0
-        Int msgChoice = zad_DeviceMsg.Show() ; display menu
-        if msgChoice != 0 ; Equip Device voluntarily
-            menuDisable = true
+    If !silently
+        If (IsEquipDeviceConflict(akActor) || IsEquipRequiredDeviceConflict(akActor))
+            menuDisable = true        
             akActor.UnequipItem(deviceInventory, false, true)
             return
-        Else            
-            StorageUtil.SetIntValue(akActor, "zad_Equipped" + libs.LookupDeviceType(zad_DeviousDevice) + "_ManipulatedStatus", 0)
-            If !DisableLockManipulation && libs.Config.UseItemManipulation && ( deviceRendered.HasKeyword(libs.zad_Lockable) || deviceInventory.HasKeyword(libs.zad_Lockable) ) && !deviceInventory.HasKeyword(libs.zad_QuestItem) && !deviceRendered.HasKeyword(libs.zad_QuestItem) && !deviceInventory.HasKeyword(libs.zad_BlockGeneric) && !deviceRendered.HasKeyword(libs.zad_BlockGeneric) 
-                Int Choice = 0
-                If zad_DD_OnPutOnDevice
-                    Choice = zad_DD_OnPutOnDevice.Show()
-                Else
-                    Choice = libs.zad_DD_OnPutOnDevice.Show()
-                EndIf
-                If Choice == 1
-                    StorageUtil.SetIntValue(akActor, "zad_Equipped" + libs.LookupDeviceType(zad_DeviousDevice) + "_ManipulatedStatus", 1)
+        EndIf    
+        If akActor == libs.playerref && !akActor.WornHasKeyword(zad_DeviousDevice) && akActor.GetItemCount(deviceRendered) == 0
+            Int msgChoice = zad_DeviceMsg.Show() ; display menu
+            if msgChoice != 0 ; Equip Device voluntarily
+                menuDisable = true
+                akActor.UnequipItem(deviceInventory, false, true)
+                return
+            Else            
+                StorageUtil.SetIntValue(akActor, "zad_Equipped" + libs.LookupDeviceType(zad_DeviousDevice) + "_ManipulatedStatus", 0)
+                If !DisableLockManipulation && libs.Config.UseItemManipulation && ( deviceRendered.HasKeyword(libs.zad_Lockable) || deviceInventory.HasKeyword(libs.zad_Lockable) ) && !deviceInventory.HasKeyword(libs.zad_QuestItem) && !deviceRendered.HasKeyword(libs.zad_QuestItem) && !deviceInventory.HasKeyword(libs.zad_BlockGeneric) && !deviceRendered.HasKeyword(libs.zad_BlockGeneric) 
+                    Int Choice = 0
+                    If zad_DD_OnPutOnDevice
+                        Choice = zad_DD_OnPutOnDevice.Show()
+                    Else
+                        Choice = libs.zad_DD_OnPutOnDevice.Show()
+                    EndIf
+                    If Choice == 1
+                        StorageUtil.SetIntValue(akActor, "zad_Equipped" + libs.LookupDeviceType(zad_DeviousDevice) + "_ManipulatedStatus", 1)
+                    EndIf
                 EndIf
             EndIf
-        EndIf
-    EndIf    
+        EndIf    
+    EndIf
     int filter = OnEquippedFilter(akActor, silent=silently)
     if filter >= 1
         if filter == 2
@@ -232,15 +233,19 @@ Event OnEquipped(Actor akActor)
         akActor.EquipItem(DeviceInventory, false, true)
     EndIf    
     akActor.EquipItem(DeviceRendered, true, true)
-    if akActor == libs.PlayerRef && !akActor.IsOnMount()
-        ; make it visible for the player in case the menu is open
-        akActor.QueueNiNodeUpdate()
-    elseif akActor != libs.PlayerRef && !akActor.IsOnMount() && deviceRendered.HasKeyword(libs.zad_DeviousHeavyBondage)
-        ; prevent a bug with straitjackets and elbowbinders not hiding NPC hands when equipping these items.        
-        akActor.UpdateWeight(0)
-    EndIf    
-    if akActor != libs.PlayerRef && (deviceRendered.HasKeyword(libs.zad_DeviousHeavyBondage) || deviceRendered.HasKeyword(libs.zad_DeviousHobbleSkirt))
-        libs.RepopulateNpcs()
+    if akActor == libs.PlayerRef
+        If !akActor.IsOnMount()
+            ; make it visible for the player in case the menu is open
+            akActor.QueueNiNodeUpdate()
+        EndIf
+    else
+        If !akActor.IsOnMount() && deviceRendered.HasKeyword(libs.zad_DeviousHeavyBondage)
+            ; prevent a bug with straitjackets and elbowbinders not hiding NPC hands when equipping these items.        
+            akActor.UpdateWeight(0)
+        EndIf
+        if (deviceRendered.HasKeyword(libs.zad_DeviousHeavyBondage) || deviceRendered.HasKeyword(libs.zad_DeviousHobbleSkirt))
+            libs.RepopulateNpcs()
+        EndIf    
     EndIf    
     OnEquippedPost(akActor)
     ResetLockShield()
@@ -350,20 +355,20 @@ Event OnUnequipped(Actor akActor)
                     If !akActor.IsEquipped(deviceInventory)
                         akActor.EquipItem(deviceInventory, false, true)
                     EndIf                
-                    if !libs.PlayerRef.IsEquipped(deviceRendered)
+                    if !akActor.IsEquipped(deviceRendered)
                         akActor.EquipItem(deviceRendered, true, true)
                     EndIf
                     StorageUtil.UnsetIntValue(akActor, "zad_RemovalOperation" + zad_DeviousDevice)
                     return
                 EndIf
-                if !libs.PlayerRef.IsEquipped(deviceRendered) && akActor.GetItemCount(deviceInventory) < 2
+                if !akActor.IsEquipped(deviceRendered) && akActor.GetItemCount(deviceInventory) < 2
                     libs.Log("Caught remove-all (rendered device missing). Re-equipping device.")
                     akActor.EquipItem(deviceRendered, true, true)
                     StorageUtil.UnsetIntValue(akActor, "zad_RemovalOperation" + zad_DeviousDevice)
                     return
                 EndIf    
                 ; Player had to unequip item to access this. Reequip it immediately, to help avoid spam-unlocks.
-                libs.PlayerRef.EquipItem(deviceInventory, false, true)
+                akActor.EquipItem(deviceInventory, false, true)
                 DeviceMenu()
             Else
                 menuDisable = false
@@ -611,10 +616,8 @@ bool Function RemoveDeviceWithKey(actor akActor = none, bool destroyDevice=false
             EndIf
             Return False
         EndIf
-        If DestroyKey
+        If DestroyKey || (libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey))
             libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)
-        elseif libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey)
-            libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)    
         EndIf    
     EndIf        
     ; could call ProcessLinkedDeviceOnUnlock(Actor akActor)    here, but there is a theoretical chance that OnUnequipped() will not be completed before the new device will get locked on, so we're just signaling OnUnequipped() to do it.
@@ -869,7 +872,7 @@ Function DeviceMenuCarryOn()
 EndFunction
 
 Function DisplayDifficultyMsg()
-    Int StruggleEscapeChance = Math.Floor(BaseEscapeChance)
+    Int StruggleEscapeChance = BaseEscapeChance as Int
     String result = "You carefully examine the " + DeviceName + ". "
     If StruggleEscapeChance > 75
         result += "This restraint is fairly weak and will not offer much resistance against struggling."
@@ -938,15 +941,14 @@ Float Function CalculateDifficultyModifier(Bool operator = true)
     EndIf
     Float val = 1.0
     Int mcmValue = libs.config.EscapeDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Int median = ((mcmLength - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
+    Int median = ((libs.config.EsccapeDifficultyList.Length - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
     Float maxModifier = 0.75 ; set this as desired - it's the maximum possible +/- modifier. It should not be larger than 1 (=100%)
     Float StepLength = maxModifier / median
     Int Steps = mcmValue - median    
     If operator
-        val = 1 + (Steps * StepLength)
+        val += (Steps * StepLength)
     Else
-        val = 1 - (Steps * StepLength)
+        val -= (Steps * StepLength)
     EndIf
     libs.log("Difficulty modifier applied: " + val + " [setting: " + mcmValue + "]")
     return val
@@ -963,15 +965,14 @@ Float Function CalculateCooldownModifier(Bool operator = true)
     EndIf
     Float val = 1.0
     Int mcmValue = libs.config.CooldownDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Int median = ((mcmLength - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
+    Int median = ((libs.config.EsccapeDifficultyList.Length - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
     Float maxModifier = 0.9 ; set this as desired - it's the maximum possible +/- modifier. It should not be larger than 1 (=100%)
     Float StepLength = maxModifier / median
     Int Steps = mcmValue - median    
     If operator
-        val = 1 + (Steps * StepLength)
+        val += (Steps * StepLength)
     Else
-        val = 1 - (Steps * StepLength)
+        val -= (Steps * StepLength)
     EndIf
     libs.log("Difficulty modifier applied: " + val + " [setting: " + mcmValue + "]")
     return val
@@ -989,8 +990,7 @@ Float Function CalculateTimerModifier(float timerMin, float timerMax)
     Float timerRange = timerMax - timerMin
     ;use escape difficulty for calculations
     Int mcmValue = libs.config.EscapeDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Float StepLength = timerRange / mcmLength
+    Float StepLength = timerRange / libs.config.EsccapeDifficultyList.Length
     ;let's call it escape chance instead - from zero to max
     float upperTargetBound = timerMax - mcmValue * StepLength
     float lowerTargetBound = timerMax - (mcmValue + 1) * StepLength
@@ -1009,8 +1009,7 @@ Float Function CalculateTimerModifier(float timerMin, float timerMax)
     ;sanity checks just because
     if val < timerMin
         val = timerMin
-    endIf
-    if val > timerMax
+    elseif val > timerMax
         val = timerMax
     endIf
     libs.log("Difficulty timer modifier applied: " + val + " [setting: " + mcmValue + "]")
@@ -1028,15 +1027,14 @@ Float Function CalculateKeyModifier(Bool operator = true)
     EndIf
     Float val = 1.0
     Int mcmValue = libs.config.KeyDifficulty    
-    Int mcmLength = libs.config.EsccapeDifficultyList.Length
-    Int median = ((mcmLength - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
+    Int median = ((libs.config.EsccapeDifficultyList.Length - 1) / 2) As Int ; This assumes the array to be uneven, otherwise there is no median value.
     Float maxModifier = 1 ; set this as desired - it's the maximum possible +/- modifier. It should not be larger than 1 (=100%)
     Float StepLength = maxModifier / median
     Int Steps = mcmValue - median    
     If operator
-        val = 1 + (Steps * StepLength)
+        val += (Steps * StepLength)
     Else
-        val = 1 - (Steps * StepLength)
+        val -= (Steps * StepLength)
     EndIf
     libs.log("Difficulty modifier applied: " + val + " [setting: " + mcmValue + "]")
     return val
@@ -1100,7 +1098,6 @@ EndFunction
 ; returns 0 when the escape attempt fails, 1 at success and -1 when no attempt was made due to cooldown
 Int Function Escape(Float Chance)
     StruggleScene(libs.PlayerRef)
-    Bool Success = False
     If Chance == 0.0
         ; no need to process, but returning here will prevent catastrophic failures when there is zero chance of success. We're not THAT mean!
         return 0
@@ -1109,7 +1106,7 @@ Int Function Escape(Float Chance)
     If Utility.RandomFloat(0.0, 99.9) < (Chance * CalculateDifficultyModifier(True))
         libs.log("Player has escaped " + DeviceName)
         ; increase success counter
-        libs.zadDeviceEscapeSuccessCount.SetValueInt(libs.zadDeviceEscapeSuccessCount.GetValueInt() + 1)
+        libs.zadDeviceEscapeSuccessCount.SetValue(libs.zadDeviceEscapeSuccessCount.GetValue() + 1)
         RemoveDevice(libs.PlayerRef)
         libs.SendDeviceEscapeEvent(DeviceInventory, zad_DeviousDevice, true)
         return 1
@@ -1149,27 +1146,23 @@ Float Function CalclulateCutSuccess()
     If CutDeviceEscapeChance > 0.0
         ; add 1% for every previous attempt
         result += EscapeCutAttemptsMade        
-        If Libs.PlayerRef.GetAV("OneHanded") > 25
-            result += 1.0
-        Endif
-        If Libs.PlayerRef.GetAV("OneHanded") > 50
-            result += 2.0
-        Endif
-        If Libs.PlayerRef.GetAV("OneHanded") > 75
+        Float akOneHanded = Libs.PlayerRef.GetActorValue("OneHanded")
+        If akOneHanded > 75
+            result += 6.0
+        ElseIf akOneHanded > 50
             result += 3.0
+        ElseIf akOneHanded > 25
+            result += 1.0
         Endif
         ; apply bonus for total successful escapes
-        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
-        If EscapesMade > 10
-            result += 1.0
-        Endif
-        If EscapesMade > 25
-            result += 1.0
-        Endif
-        If EscapesMade > 50
-            result += 1.0
-        Endif
+        Float EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue()
         If EscapesMade > 100
+            result += 4.0
+        ElseIf EscapesMade > 50
+            result += 3.0
+        ElseIf EscapesMade > 25
+            result += 2.0
+        ElseIf EscapesMade > 10
             result += 1.0
         Endif
     Endif
@@ -1274,37 +1267,35 @@ Function EscapeAttemptLockPick()
 EndFunction
 
 Bool Function HasValidLockPick()
-    Bool HasValidItem = false
     If AllowLockPick && libs.PlayerRef.GetItemCount(libs.Lockpick) > 0
         return true
     EndIf
     Int i = AllowedLockPicks.Length
-    While i > 0 && !HasValidItem
+    While i > 0
         i -= 1
         Form frm = AllowedLockPicks[i]
         If libs.playerRef.GetItemCount(frm) > 0
-            HasValidItem = True
+            return True
         EndIf
     EndWhile
-    return HasValidItem
+    return false
 EndFunction
 
 Bool Function DestroyLockPick()
-    Bool LockPickDestroyed = false
     If AllowLockPick && libs.PlayerRef.GetItemCount(libs.Lockpick) > 0
         libs.playerRef.RemoveItem(libs.Lockpick)
         return True
     EndIf
     Int i = AllowedLockPicks.Length
-    While i > 0 && !LockPickDestroyed
+    While i > 0
         i -= 1
         Form frm = AllowedLockPicks[i]
-        If libs.playerRef.GetItemCount(frm) > 0 && !(frm As Keyword)
+        If !(frm As Keyword) && libs.playerRef.GetItemCount(frm) > 0
             libs.playerRef.RemoveItem(frm)
-            LockPickDestroyed = True
+            return true
         EndIf
     EndWhile
-    return LockPickDestroyed
+    return false
 EndFunction
 
 Float Function CalclulateLockPickSuccess()
@@ -1313,27 +1304,23 @@ Float Function CalclulateLockPickSuccess()
     If LockPickEscapeChance > 0.0
         ; add 1% for every previous attempt
         result += EscapeLockPickAttemptsMade        
-        If Libs.PlayerRef.GetAV("Lockpicking") > 25
-            result += 1.0
-        Endif
-        If Libs.PlayerRef.GetAV("Lockpicking") > 50
-            result += 2.0
-        Endif
-        If Libs.PlayerRef.GetAV("Lockpicking") > 75
+        Float akLockpick = Libs.PlayerRef.GetActorValue("Lockpicking")
+        If akLockpick > 75
+            result += 6.0
+        ElseIf akLockpick > 50
             result += 3.0
+        ElseIf akLockpick > 25
+            result += 1.0
         Endif
         ; apply bonus for total successful escapes
-        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
-        If EscapesMade > 10
-            result += 1.0
-        Endif
-        If EscapesMade > 25
-            result += 1.0
-        Endif
-        If EscapesMade > 50
-            result += 1.0
-        Endif
+        Float EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue()
         If EscapesMade > 100
+            result += 4.0
+        ElseIf EscapesMade > 50
+            result += 3.0
+        ElseIf EscapesMade > 25
+            result += 2.0
+        ElseIf EscapesMade > 10
             result += 1.0
         Endif
     Endif
@@ -1420,28 +1407,27 @@ Float Function CalclulateStruggleSuccess()
     If BaseEscapeChance > 0.0
         ; add 1% for every previous attempt
         result += EscapeStruggleAttemptsMade        
+        Float akDestruction = Libs.PlayerRef.GetActorValue("Destruction")
+        Float akAlteration = Libs.PlayerRef.GetActorValue("Alteration")
         ; apply strength bonus
-        If Libs.PlayerRef.GetAV("Destruction") > 25 || Libs.PlayerRef.GetAV("Alteration") > 25
+        If akDestruction > 25 || akAlteration > 25
             result += 1.0
         Endif
-        If Libs.PlayerRef.GetAV("Destruction") > 50 || Libs.PlayerRef.GetAV("Alteration") > 50
+        If akDestruction > 50 || akAlteration > 50
             result += 2.0
         Endif
-        If Libs.PlayerRef.GetAV("Destruction") > 75 || Libs.PlayerRef.GetAV("Alteration") > 75
+        If akDestruction > 75 || akAlteration > 75
             result += 3.0
         Endif        
         ; apply bonus for total successful escapes
-        Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
-        If EscapesMade > 10
-            result += 1.0
-        Endif
-        If EscapesMade > 25
-            result += 1.0
-        Endif
-        If EscapesMade > 50
-            result += 1.0
-        Endif
+        Float EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue()
         If EscapesMade > 100
+            result += 4.0
+        ElseIf EscapesMade > 50
+            result += 3.0
+        ElseIf EscapesMade > 25
+            result += 2.0
+        ElseIf EscapesMade > 10
             result += 1.0
         Endif
     Endif
@@ -1455,7 +1441,6 @@ EndFunction
 
 ; returns 0 when the escape attempt fails, 1 at success and -1 when no attempt was made due to cooldown
 Int Function RepairJammedLock(Float Chance)
-    Bool Success = False
     If Chance == 0.0
         ; no need to process, but returning here will prevent catastrophic failures when there is zero chance of success. We're not THAT mean!
         return 0

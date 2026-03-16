@@ -5,9 +5,9 @@ zadLibs Property Libs Auto
 ImagespaceModifier Property zad_BlindfoldModifier Auto
 ImagespaceModifier Property zad_BlindfoldLeeches Auto
 
-actor Property Target Auto
-Bool Property Terminate Auto
-Bool Property blinded Auto
+actor Target
+Bool Terminate
+Bool blinded
 
 float lastBlindfoldStrength = 0.0
 int lastdarkfogStrength = 0
@@ -77,11 +77,7 @@ EndEvent
 
 Event OnUpdate()
     if Target == Libs.PlayerRef
-        if Terminate
-            libs.ToggleCompass(true)
-        Else
-            libs.ToggleCompass(false)
-        EndIf
+        libs.ToggleCompass(Terminate)
         DoRegister()
     EndIf
 EndEvent

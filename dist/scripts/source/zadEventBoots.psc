@@ -1,11 +1,10 @@
 scriptName zadEventBoots extends zadBaseEvent
 
 bool Function HasKeywords(actor akActor)
-	Bool isWearingSafeShoes = akActor.WornHasKeyword( Keyword.GetKeyword( "zad_effect_noTripping" ) )
 	if !libs.AllowGenericEvents(akActor, libs.zad_DeviousBoots)
 		return false
 	else
-		return (akActor.WornHasKeyword(libs.zad_DeviousBoots) && !isWearingSafeShoes)
+		return (akActor.WornHasKeyword(libs.zad_DeviousBoots) && !akActor.WornHasKeyword( Keyword.GetKeyword( "zad_effect_noTripping" ) ))
 	endif
 EndFunction
 

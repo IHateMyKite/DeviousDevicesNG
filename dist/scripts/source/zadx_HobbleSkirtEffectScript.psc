@@ -3,17 +3,10 @@ ScriptName zadx_HobbleSkirtEffectScript extends ActiveMagicEffect
 ; Libraries
 zadLibs Property Libs Auto
 
-Float SpeedMultDifferential = 0.0
-Float TargetSpeedMult = 50.0
-Float FlatSpeedDebuff = 50.0
-Float SpeedMultRestore = 0.0
-
-bool savedINIDampen
-bool FootIKneedsreset
 bool MuJointFixneedsreset
 
-String Property NINODE_ROOT = "NPC" AutoReadOnly
-String Property NIOO_KEY = "DDPET" AutoReadOnly
+String Property NINODE_ROOT = "NPC" AutoReadOnly Hidden
+String Property NIOO_KEY = "DDPET" AutoReadOnly Hidden
 
 Actor who
 Keyword Property zad_DeviousHobbleSkirtRelaxed Auto	;extreme or relaxed speed debuff
@@ -22,7 +15,7 @@ float REQSavedVal				;Saved value of the setting, returned once the dress is une
 
 bool Function GetRequiem()
 	If Game.GetModByName("Requiem.esp") != 255
-		REQExhaustion = (Game.GetFormFromFile(0x0336AD6A, "Requiem.esp") as GlobalVariable)
+		REQExhaustion = (Game.GetFormFromFile(0x36AD6A, "Requiem.esp") as GlobalVariable)
 		libs.Log("GetRequiem(): Hobble Skirt == true. Switching to Requiem compatibility mode.")
 		return True
 	Else
@@ -31,8 +24,8 @@ bool Function GetRequiem()
 EndFunction
 
 Function ApplySM(actor akTarget)
-	akTarget.DamageAv("CarryWeight", 0.02)
-	akTarget.RestoreAv("CarryWeight", 0.02)
+	akTarget.DamageActorValue("CarryWeight", 0.02)
+	akTarget.RestoreActorValue("CarryWeight", 0.02)
 EndFunction
 
 Event OnEffectStart(Actor akTarget, Actor akCaster)

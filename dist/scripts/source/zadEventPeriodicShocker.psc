@@ -6,8 +6,6 @@ EndFunction
 
 Function Execute(actor akActor)
 	if akActor == libs.playerRef
-		bool hasPlugs = false
-		bool hasPiercings = false
 		armor vPlug = StorageUtil.GetFormValue(akActor, "zad_Equipped" + libs.LookupDeviceType(libs.zad_DeviousPlugVaginal) + "_Rendered") as Armor
 		armor vPiercing = StorageUtil.GetFormValue(akActor, "zad_Equipped" + libs.LookupDeviceType(libs.zad_DeviousPiercingsVaginal) + "_Rendered") as Armor
 		if vPiercing && (vPiercing.HasKeyword(libs.zad_EffectShocking))

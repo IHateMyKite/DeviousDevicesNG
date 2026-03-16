@@ -4,8 +4,8 @@ ScriptName zadTrainingEffect extends ActiveMagicEffect
 zadLibs Property Libs Auto
 SexlabFramework Property Sexlab Auto
 
-Bool Property Terminate Auto
-actor Property Target Auto
+Bool Terminate
+actor Target
 
 ; Extend this function to set a day passed event.
 Function OnTrainingDayPassed(int daysRemaining)
@@ -34,7 +34,7 @@ Event OnTrainingViolation(string eventName, string argString, float argNum, form
 	if argString == "SpellCast"
 		ModDaysRemaining(1, maxRange=GetTrainingRange())
 		libs.NotifyPlayer("Your mental reserves are dramatically drained as the plug punishes you.")
-		libs.PlayerRef.DamageAv("Magicka", 200)
+		Target.DamageActorValue("Magicka", 200)
 	EndIf
 EndEvent
 
@@ -50,20 +50,21 @@ Event OnUpdateGameTime()
 	EndIf
 EndEvent
 
-float Function InitNextTickTime()
-	float ret = libs.GameDaysPassed.GetValue() + 1.0
+float Function InitNextTickTime(Float daysPassed)
+	float ret = daysPassed + 1.0
 	StorageUtil.SetFloatValue(Target, "zad.NextTickTime", ret)
 	return ret
 EndFunction
 
 Function DoRegister()
+	Float time = libs.GameDaysPassed.GetValue()
 	float nextTime = StorageUtil.GetFloatValue(Target, "zad.NextTickTime", -1.0)
 	if nextTime == -1.0
-		nextTime = InitNextTickTime()
+		nextTime = InitNextTickTime(time)
 	EndIf
-	libs.Log("DoRegister(Training):"+libs.GameDaysPassed.GetValue()+" / "+ nextTime)
-	if !Terminate && libs.GameDaysPassed.GetValue() >= nextTime
-		InitNextTickTime()
+	libs.Log("DoRegister(Training):"+time+" / "+ nextTime)
+	if !Terminate && time >= nextTime
+		InitNextTickTime(time)
 		int daysRemaining = ModDaysRemaining(-1, maxRange=GetTrainingRange())
 		libs.Log("DoRegister(Training): Day passed. Days Remaining: "+daysRemaining +".")
 		if daysRemaining == 0
@@ -81,11 +82,10 @@ int Function ModDaysRemaining(int changeBy, int maxRange)
 	int newDaysRemaining = daysRemaining + changeBy
 	if newDaysRemaining <0
 		newDaysRemaining = 0
-	EndIf
-	if newDaysRemaining > maxRange
+	elseif newDaysRemaining > maxRange
 		newDaysRemaining = maxRange
 	EndIf
-	InitNextTickTime()
+	InitNextTickTime(libs.GameDaysPassed.GetValue())
 	libs.log("Days remaining was: "+daysRemaining+". Now set to "+newDaysRemaining+".")
 	StorageUtil.SetIntValue(Target, "zad.TrainingDaysRemaining", newDaysRemaining)
 	return newDaysRemaining
@@ -97,7 +97,6 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 		libs.Log("OnEffectStart(Training): Not player, doing nothing.")
 	else
 		libs.Log("OnEffectStart(Training)")
-		Terminate = False
 		DoRegisterModEvent()
 		DoRegister()
 	EndIf
@@ -105,8 +104,6 @@ EndEvent
 
 Event OnEffectFinish(Actor akTarget, Actor akCaster)
 	Terminate = True
-	UnregisterForModEvent("TrainingViolation")
-	UnregisterForUpdateGameTime()
 	libs.Log("OnEffectFinish(Training)")
 EndEvent
 

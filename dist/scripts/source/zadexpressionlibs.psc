@@ -126,7 +126,7 @@ endProperty
 
 ;round float number and returns int
 Int Function Round(Float afValue) global
-    return Math.Floor(afValue + 0.5)
+    return (afValue + 0.5) as Int
 EndFunction
 
 ;returns empty expression float array
@@ -249,7 +249,6 @@ EndFunction
 ;sometimes look stupid, other times look good. Depends on luck :)
 Float[] Function CreateRandomExpression() global
     float[] loc_expression      = CreateEmptyExpression()
-    string  loc_strres          = ""
     int     loc_i               = 0
 
     while loc_i < loc_expression.length - 2
@@ -265,7 +264,7 @@ EndFunction
 
 ;check current gag state and update phonems 
 Function ApplyGagEffect(actor akActor)
-    if akActor.Is3DLoaded() || akActor == Game.getPlayer()
+    if akActor.Is3DLoaded() || akActor == libs.PlayerRef
         ;Check custom gag expressions first before mutex is applied
         If akActor.WornHasKeyword(libs.zad_GagCustomExpression)
             libs.SendGagEffectEvent(akActor, false)
