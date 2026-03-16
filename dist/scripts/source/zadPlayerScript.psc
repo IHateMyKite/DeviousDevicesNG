@@ -128,6 +128,7 @@ Event OnPlayerLoadGame()
         libs.MuteOverEncumberedMSG()
     endif
     Game.UpdateHairColor()
+    UnregisterForAllMenus()
     RegisterForMenu("MapMenu")
     RegisterEvents()
     RegisterKeys()

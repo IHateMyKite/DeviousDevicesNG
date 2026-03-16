@@ -1472,7 +1472,6 @@ Function DDI_DebugFixDevices()
 	log("DDI_DebugFixDevices called. Attempting to fix broken devices.")
 	Armor idevice = None
 	Armor rdevice = None
-	Form kForm = None
 	Int RemovedItems = 0
 	zadTemporaryDeviceStorage.Revert()
 	Int i = PlayerRef.GetNumItems()
