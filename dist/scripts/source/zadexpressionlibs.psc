@@ -126,7 +126,7 @@ endProperty
 
 ;round float number and returns int
 Int Function Round(Float afValue) global
-    return (afValue + 0.5) as Int
+    return Math.Floor(afValue + 0.5)
 EndFunction
 
 ;returns empty expression float array
