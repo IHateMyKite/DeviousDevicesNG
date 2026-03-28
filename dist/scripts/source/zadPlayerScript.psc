@@ -28,16 +28,18 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
     libs.log("SL scene started: Checking for gagged voices")
     sslThreadController controller = libs.SexLab.HookController(argString)
     actor[] SceneActors = libs.SexLab.HookActors(argString)
-    int i = 0
-    int actor_count = SceneActors.length
-    while i < actor_count
+    int i = SceneActors.length
+    while i > 0
+		i -= 1
         if SceneActors[i].WornHasKeyword(libs.zad_DeviousGag)
-			If SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 1 ;p+ fix
-				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Female,Gagged", "", True))
-				libs.SexLab.OpenMouth(SceneActors[i])
-			ElseIf SKSE.GetPluginVersion("SexLabUtil") >= 34340864 && SceneActors[i].GetActorBase().GetSex() == 0 ;p+ fix
-				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Male,Gagged", "", True))
-				libs.SexLab.OpenMouth(SceneActors[i])
+			If libs.HasPPlus
+				If SceneActors[i].GetActorBase().GetSex() == 1 ;p+ fix
+					controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Female,Gagged", "", True))
+					libs.SexLab.OpenMouth(SceneActors[i])
+				Else
+					controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceByTags("Male,Gagged", "", True))
+					libs.SexLab.OpenMouth(SceneActors[i])
+				EndIf
 			else ;regular SL way of switching voices
 				controller.SetVoice(SceneActors[i], libs.SexLab.GetVoiceBySlot(voiceslots[SceneActors[i].GetActorBase().GetSex()]))
 			endif
@@ -45,7 +47,6 @@ Event OnAnimationStart(string eventName, string argString, float argNum, form se
         else
             libs.log(SceneActors[i].GetLeveledActorBase().GetName() + " is not gagged.")
         endif
-        i += 1
     endwhile
 EndEvent
 
@@ -77,18 +78,21 @@ Function RegisterKeys()
 EndFunction
 
 Event OnKeyDown(int keyCode)
+    If Utility.IsInMenuMode()
+        Return
+    EndIf
     ; Animation cancel
-    if keyCode == Input.GetMappedKey("Jump", 0) || keyCode == Input.GetMappedKey("Jump", 2)
-        If libs.PlayerIsInCancellableAnimation
+    If libs.PlayerIsInCancellableAnimation
+        if keyCode == Input.GetMappedKey("Jump", 0) || keyCode == Input.GetMappedKey("Jump", 2)
             ; the correct pre-anim camera state is usually local to the function starting the animation, so it's hard to get.
             ; I'll just use this for now. It won't properly restore first person, but that's really a big deal.
             bool[] camState = new bool[2]
             libs.EndThirdPersonAnimation(libs.PlayerRef, camState)
             libs.PlayerIsInCancellableAnimation = false
+        Else
+            ; This can only happen if a registered key was remapped. If so, we should re-register.
+            RegisterKeys()
         EndIf
-    Else
-        ; This can only happen if a registered key was remapped. If so, we should re-register.
-        RegisterKeys()
     EndIf
 EndEvent
 
@@ -99,6 +103,8 @@ endEvent
 bool _initiated = false
 Event OnUpdate()
     if !_initiated
+        libs.HasPPlus = SKSE.GetPluginVersion("SexLabUtil") >= 34340864
+        AddInventoryEventFilter(libs.SoulgemFilled)
         RegisterEvents()
         InitGagSpeak(true)
         _initiated = true
@@ -106,14 +112,15 @@ Event OnUpdate()
 EndEvent
 
 Event OnPlayerLoadGame()
+    AddInventoryEventFilter(libs.SoulgemFilled)
     actor akActor = libs.PlayerRef
+    libs.HasPPlus = SKSE.GetPluginVersion("SexLabUtil") >= 34340864
     libs.SpellCastVibrateCooldown = 0.0
     libs.ExpLibs.Maintenance()
     CheckForSoftDepends()
     questScript.Maintenance()
     cameraState.Maintenance()
     libs.ResetDialogue()
-    AddInventoryEventFilter(libs.SoulgemFilled)
     If akActor.WornHasKeyword(libs.zad_DeviousHobbleSkirt)
         Utility.SetINIBool("bDampenPlayerControls:Controls", false)
     Endif
@@ -121,23 +128,16 @@ Event OnPlayerLoadGame()
         libs.MuteOverEncumberedMSG()
     endif
     Game.UpdateHairColor()
+    UnregisterForAllMenus()
+    RegisterForMenu("MapMenu")
     RegisterEvents()
-	RegisterForMenu("MapMenu")
+    RegisterKeys()
     InitGagSpeak(false)
 EndEvent
 
 Function CheckForSoftDepends()
-	If Game.IsPluginInstalled("OSLAroused.esp")
-		libs.config.GotOSLA = True 		;OSL Aroused is here
-	Else
-		libs.config.GotOSLA = False     ;not here
-	EndIf
-
-	If Game.IsPluginInstalled("SexLab Inflation Framework.esp")
-		libs.config.GotSLIF = True  ;SexLab Inflation Framework is here
-	Else
-		libs.config.GotSLIF = False ;not here
-	EndIf
+	libs.config.GotOSLA = Game.IsPluginInstalled("OSLAroused.esp")
+	libs.config.GotSLIF = Game.IsPluginInstalled("SexLab Inflation Framework.esp")
 
 	If Game.IsPluginInstalled("DD_Animation_Overhaul_by_Taki17.esp")
 		libs.Error("DDNG: 'DD_Animation_Overhaul_by_Taki17' ESP is active. This ESP is from and old version and no longer required will cause issues. Remove the ESP from your mod manager.")
@@ -145,18 +145,16 @@ Function CheckForSoftDepends()
 EndFunction
  
 Event OnItemRemoved(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akDestContainer)
-    if akBaseItem == libs.SoulgemFilled
-        ; Replace with base item.
-        If akItemReference != None && akDestContainer == None  ; Dropped
-            libs.Log("Rechargeable soulgem removed: In world. Doing nothing.")
-        ElseIf akDestContainer != None && (akDestContainer as Actor) != libs.PlayerRef ; Gave item to NPC.
-            libs.Log("Rechargeable soulgem removed: Gave to an NPC, or stored in a chest.")
-        Else
-            libs.Log("Rechargeable soulgem removed: Used up. Replacing with empty.")
-            libs.playerRef.AddItem(libs.SoulgemEmpty, 1, true)
-            if akItemReference
-                akItemReference.Delete()
-            EndIf
+    ; Replace with base item.
+    If akItemReference != None && akDestContainer == None  ; Dropped
+        libs.Log("Rechargeable soulgem removed: In world. Doing nothing.")
+    ElseIf akDestContainer != None && (akDestContainer as Actor) != libs.PlayerRef ; Gave item to NPC.
+        libs.Log("Rechargeable soulgem removed: Gave to an NPC, or stored in a chest.")
+    Else
+        libs.Log("Rechargeable soulgem removed: Used up. Replacing with empty.")
+        libs.playerRef.AddItem(libs.SoulgemEmpty, 1, true)
+        if akItemReference
+            akItemReference.Delete()
         EndIf
     EndIf
 EndEvent
@@ -209,23 +207,16 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 EndEvent
  
 bool Function isDeviousDevice(Form device)
-    if device.HasKeyword(libs.zad_InventoryDevice) || device.HasKeyword(libs.zad_Lockable) || device.HasKeyword(libs.zad_DeviousPlug)
-        return true
-    endif
-    return false
+    return device.HasKeyword(libs.zad_InventoryDevice) || device.HasKeyword(libs.zad_Lockable) || device.HasKeyword(libs.zad_DeviousPlug)
 EndFunction
 
 bool Function isStrapOn(Form device)
-    if device.HasKeyword(SexLabNoStrip) && device.HasKeyword(ArmorJewelry) 
-        return true
-    endif
-    return false
+    return device.HasKeyword(SexLabNoStrip) && device.HasKeyword(ArmorJewelry)
 EndFunction
  
 Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-    actor akActor = libs.PlayerRef
-    if akBaseObject as Armor
-        armor akArmor = (akBaseObject as Armor)
+    armor akArmor = (akBaseObject as Armor)
+    if akArmor != None
         if Math.LogicalAnd(akArmor.GetSlotMask(), 0x00000004) && !akArmor.HasKeyword(libs.zad_DeviousHarness)
             if libs.PlayerRef.WornHasKeyword(libs.zad_DeviousBra) &&  libs.PlayerRef.HasMagicEffectWithKeyword(libs.zad_EffectCompressBreasts)
                 libs.ShowBreasts(libs.PlayerRef)
@@ -236,9 +227,9 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
         EndIf
     EndIf
     ;Allow script-equipped items through as long as they're not weapons, spells or torches
-    if !Utility.IsInMenuMode() && !((akBaseObject as Weapon) || (akBaseObject as Spell) || (akBaseObject as Light))
-        Return
-    EndIf
+    ;if !Utility.IsInMenuMode() && !((akBaseObject as Weapon) || (akBaseObject as Spell) || (akBaseObject as Light))
+    ;    Return
+    ;EndIf
     ;If akActor.WornHasKeyword(libs.zad_DeviousHeavyBondage) && ((akBaseObject as Weapon) || (akBaseObject as Spell) || (akBaseObject as Light) || ((akBaseObject as Armor) && (!isDeviousDevice(akBaseObject) && !isStrapOn(akBaseObject))))
     ;    If UI.IsMenuOpen("InventoryMenu")
     ;        libs.notify("You can't equip this with your hands tied!")
@@ -252,9 +243,8 @@ EndEvent
  
  
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
-    actor akActor = libs.PlayerRef
-    if akBaseObject as Armor
-        armor akArmor = (akBaseObject as Armor)
+    armor akArmor = (akBaseObject as Armor)
+    if akArmor != None
         if Math.LogicalAnd(akArmor.GetSlotMask(), 0x00000004)
             if !akArmor.HasKeyword(libs.zad_DeviousBra) && libs.PlayerRef.WornHasKeyword(libs.zad_DeviousBra) && libs.PlayerRef.HasMagicEffectWithKeyword(libs.zad_EffectCompressBreasts)
                 libs.HideBreasts(libs.PlayerRef)
@@ -267,7 +257,7 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 EndEvent
 
 Event OnMenuOpen(String MenuName)
-	If libs.config.BlindfoldBlockMapUse && MenuName == "MapMenu" && libs.PlayerRef.WornHasKeyword(libs.zad_DeviousBlindfold)
+	If libs.config.BlindfoldBlockMapUse && libs.PlayerRef.WornHasKeyword(libs.zad_DeviousBlindfold)
         ; Tiny wait, then disable abMenu player controls, which will close the map menu.
 		Utility.WaitMenuMode(0.05)
 		Game.DisablePlayerControls(false, false, false, false, false, true, false, false)

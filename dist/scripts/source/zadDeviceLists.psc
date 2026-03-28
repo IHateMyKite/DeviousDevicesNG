@@ -155,7 +155,7 @@ Armor Function GetRandomDevice(LeveledItem akDeviceList)
         loc_nestedLL = loc_form As LeveledItem
         loc_armor = loc_form As Armor
     EndWhile
-    Return loc_form as Armor
+    Return loc_armor
 EndFunction
 
 

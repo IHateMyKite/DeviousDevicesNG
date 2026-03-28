@@ -11,14 +11,12 @@ int inflationFactionRank
 
 Function OnEquippedPre(actor akActor, bool silent=false)
 	libs.Log("Inflatable Gag: Setting faction rank.")
-	akActor.AddToFaction(zadx_InflatableGagFaction)
 	akActor.SetFactionRank(zadx_InflatableGagFaction, 1)
 	Parent.OnEquippedPre(akActor, silent)
 EndFunction
 
 Function OnRemoveDevice(actor akActor)
 	libs.Log("Inflatable Gag: Resetting faction rank.")
-	akActor.SetFactionRank(zadx_InflatableGagFaction, 0)
 	akActor.RemoveFromFaction(zadx_InflatableGagFaction)
 EndFunction
 
@@ -39,18 +37,20 @@ Function DeviceMenuExt(int msgChoice)
 	ElseIf msgChoice == 4 ; Inflate gag
 		InflateGag(gagwearer)
 	ElseIf msgChoice == 5 ; Deflate gag
-		if deviceValveKey && libs.PlayerRef.GetItemCount(deviceValveKey) == 0
-			libs.NotifyPlayer("You lack the key to manipulate the valve.")
-		elseif deviceValveKey && libs.PlayerRef.GetItemCount(deviceValveKey) >= 0
-			DeflateGag(gagwearer)
-			If DestroyValveKey && deviceValveKey.HasKeyword(libs.zad_NonUniqueKey)
-				libs.PlayerRef.RemoveItem(deviceValveKey, 1, False)
-			elseif libs.Config.GlobalDestroyKey && deviceValveKey.HasKeyword(libs.zad_NonUniqueKey)
-				libs.PlayerRef.RemoveItem(deviceValveKey, 1, False)
+		if deviceValveKey
+			if libs.PlayerRef.GetItemCount(deviceValveKey) == 0
+				libs.NotifyPlayer("You lack the key to manipulate the valve.")
+			else
+				DeflateGag(gagwearer)
+				If (DestroyValveKey || libs.Config.GlobalDestroyKey) && deviceValveKey.HasKeyword(libs.zad_NonUniqueKey)
+					libs.PlayerRef.RemoveItem(deviceValveKey, 1, False)
+				endif
 			endif
-		else
-			DeflateGag(gagwearer)
+
+			Return
 		endif
+
+		DeflateGag(gagwearer)
 	EndIf
 EndFunction
 

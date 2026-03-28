@@ -227,7 +227,7 @@ Function ApplyDevices(Actor akActor)
 	While i > 0
 		i -= 1
 		If EquipDevices[i].HasKeyword(libs.zad_InventoryDevice)
-			libs.EquipDevice(akActor, EquipDevices[i], libs.GetRenderedDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False)
+			libs.EquipDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False)
 		Else
 			akActor.EquipItem(EquipDevices[i], abSilent = True)
 		EndIf
@@ -239,7 +239,7 @@ Function RemoveDevices(Actor akActor)
 	While i > 0
 		i -= 1
 		If EquipDevices[i].HasKeyword(libs.zad_InventoryDevice)
-			libs.RemoveDevice(akActor, EquipDevices[i], libs.GetRenderedDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False, DestroyDevice = True)
+			libs.RemoveDevice(akActor, EquipDevices[i], zadNativeFunctions.GetRenderDevice(EquipDevices[i]), libs.GetDeviceKeyword(EquipDevices[i]), SkipMutex = True, SkipEvents = False, DestroyDevice = True)
 		Else
 			akActor.UnEquipItem(EquipDevices[i], abSilent = True)
 			akActor.RemoveItem(EquipDevices[i], abSilent = True)
@@ -325,7 +325,7 @@ Function LockActor(actor act)
 			act.EquipItem(clib.zadc_NoWaitItem, True, True)
 		EndIf
 		Game.ForceThirdPerson()
-		Game.SetCameraTarget(libs.PlayerRef)
+		Game.SetCameraTarget(act)
 	EndIf			
 	clib.StoreDevice(user, self)
 	SetLockShield()	
@@ -336,7 +336,6 @@ Function LockActor(actor act)
 	EndIf
 	ApplyEffects(user)
 	ApplyDevices(user)	
-	user.AddToFaction(clib.zadcNGInContraptionFaction)
 	user.SetFactionRank(clib.zadcNGInContraptionFaction, 1)
 	RegisterForSingleUpdate(30)	
 	LastBreakEscapeAttemptAt = 0.0
@@ -369,7 +368,7 @@ Function UnlockActor()
 	user.StopTranslation()
 	ActorUtil.RemovePackageOverride(user, CurrentStruggle)
 	ActorUtil.RemovePackageOverride(user, CurrentPose)
-	If user == Game.GetPlayer()
+	If user == libs.PlayerRef
 		Game.SetPlayerAIDriven(False)
 		Game.EnablePlayerControls()	
 		user.RemoveItem(clib.zadc_NoWaitItem, user.GetItemCount(clib.zadc_NoWaitItem), abSilent = True)
@@ -387,7 +386,6 @@ Function UnlockActor()
 	RemoveEffects(user)
 	clib.ResetNiOverrideOverride(user)
 	RemoveDevices(user)
-	user.SetFactionRank(clib.zadcNGInContraptionFaction, 0)
 	user.RemoveFromFaction(clib.zadcNGInContraptionFaction)
 	;If ForceStripActor			
 	;	clib.RestoreOutfit(user)
@@ -623,17 +621,16 @@ Bool Function UnlockAttemptNPC()
 		Return False
 	EndIf		
 	If DeviceKey
-		If libs.PlayerRef.GetItemCount(DeviceKey) <= 0
+		Int keyCount = libs.PlayerRef.GetItemCount(DeviceKey)
+		If keyCount <= 0
 			zadc_OnNoKeyMSG.Show()			
 			Return False
-		ElseIf libs.PlayerRef.GetItemCount(DeviceKey) < NumberOfKeysNeeded			
+		ElseIf keyCount < NumberOfKeysNeeded			
 			zadc_OnNotEnoughKeysMSG.Show()			
 			Return False
 		EndIf				
-		If DestroyKey
+		If DestroyKey || (libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey))
 			libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)
-		elseif libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey)
-			libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)	
 		EndIf	
 	EndIf	
 	UnlockActor()
@@ -651,10 +648,11 @@ Bool Function UnlockAttempt()
 		Return False
 	EndIf
 	If DeviceKey
-		If libs.PlayerRef.GetItemCount(DeviceKey) <= 0
+		Int keyCount = libs.PlayerRef.GetItemCount(DeviceKey)
+		If keyCount <= 0
 			zadc_OnNoKeyMSG.Show()			
 			Return False
-		ElseIf libs.PlayerRef.GetItemCount(DeviceKey) < NumberOfKeysNeeded			
+		ElseIf keyCount < NumberOfKeysNeeded			
 			zadc_OnNotEnoughKeysMSG.Show()			
 			Return False
 		EndIf
@@ -663,10 +661,8 @@ Bool Function UnlockAttempt()
 		EndIf		
 		; We show the struggle scene now.
 		StruggleScene(libs.PlayerRef)		
-		If DestroyKey
+		If DestroyKey || (libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey))
 			libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)
-		elseif libs.Config.GlobalDestroyKey && DeviceKey.HasKeyword(libs.zad_NonUniqueKey)
-			libs.PlayerRef.RemoveItem(DeviceKey, NumberOfKeysNeeded, False)	
 		EndIf	
 	Else 
 		If !CheckLockAccess()
@@ -705,7 +701,7 @@ Event OnActivate(ObjectReference akActionRef)
 				LockActor(act)
 			EndIf
 		EndIf
-	Elseif user
+	Else
 		; device is occupied
 		If user != act
 			; someone else is releasing the occupant.
@@ -799,7 +795,7 @@ Event OnUpdate()
 			EndIf
 		EndIf
 		; Since the struggle scene is long, there's a chance user got unlocked since the previous "if user" check. Re-check.
-		if user && !clib.IsAnimating(user)
+		if !clib.IsAnimating(user)
 			; to make up for not checking here, we do when a scene ends.
 			CheckSelfBondageRelease()		
 		EndIf
@@ -830,7 +826,7 @@ Event OnDDCSLEnd(int tid, bool hasPlayer)
         Game.SetPlayerAIDriven()
         Game.DisablePlayerControls(abMovement = true, abFighting = true, abSneaking = true, abMenu = true,    abActivate = false, abCamSwitch = false, abLooking = false, abJournalTabs = true)
         Game.ForceThirdPerson()
-        Game.SetCameraTarget(libs.PlayerRef)
+        Game.SetCameraTarget(User)
     Else
         User.SetDontMove(True)
         User.SetRestrained(True)
@@ -853,7 +849,7 @@ Function MoveToBehind(ObjectReference akObjB, ObjectReference akObjA, Float afDi
 		Utility.wait(0.1)
 	elseif user == libs.PlayerRef
 		;akObjA.SetAngle(akObjA.GetAngleX(), akObjA.GetAngleY(), akObject.GetAngleZ()) 
-		libs.PlayerRef.SetAngle(libs.PlayerRef.GetAngleX(), libs.PlayerRef.GetAngleY(), libs.PlayerRef.GetAngleZ() + 180.0) ; rotate the player 180 degrees so the anim starts at the correct rotation
+		user.SetAngle(user.GetAngleX(), user.GetAngleY(), user.GetAngleZ() + 180.0) ; rotate the player 180 degrees so the anim starts at the correct rotation
 		Utility.wait(0.1)
 	endif
 EndFunction
@@ -864,7 +860,7 @@ Function MoveToFront(ObjectReference akObjB, ObjectReference akObjA, Float afDis
 			akObjA.SetAngle(akObjB.GetAngleX(), akObjB.GetAngleY(), akObjB.GetAngleZ())
 			akObjA.SetAngle(akObjA.GetAngleX(), akObjA.GetAngleY(), akObjA.GetAngleZ() + 180.0) 
 		elseif user == libs.PlayerRef
-			libs.PlayerRef.SetAngle(libs.PlayerRef.GetAngleX(), libs.PlayerRef.GetAngleY(), libs.PlayerRef.GetAngleZ() + 180.0) 
+			user.SetAngle(user.GetAngleX(), user.GetAngleY(), user.GetAngleZ() + 180.0) 
 			Utility.wait(0.1)
 		Endif
 EndFunction
@@ -906,12 +902,9 @@ Bool Function SexScene(Actor Partner, String AnimationName = "")
 	;		MoveToBehind(self, Partner, Distance)
 	;	EndIf	
 	
-	sslBaseAnimation[] Sanims	
-	Sanims = New sslBaseAnimation[1]
-	String ani
-	If AnimationName != ""
-		ani = AnimationName
-	Else
+	sslBaseAnimation[] Sanims = New sslBaseAnimation[1]
+	String ani = AnimationName
+	If ani == ""
 		ani = PickRandomSexScene()
 	EndIf	
 	if ani != ""
@@ -932,7 +925,7 @@ Bool Function SexScene(Actor Partner, String AnimationName = "")
 		SceneSexActors[1] = Partner	
 		RegisterForModEvent("HookAnimationEnd_DDCEnd", "OnDDCSLEnd")    
 		ActorUtil.RemovePackageOverride(User, CurrentPose)	; otherwise the anims go awry - krzp	
-		If SKSE.GetPluginVersion("SexLabUtil") >= 34340864
+		If libs.HasPPlus
 			Debug.SendAnimationEvent(User, "IdleForceDefaultState")	; sneaky v2 p+ compatibility to make sure animations start from a default idle, otherwise the first stage on the actor in a contraption didn't play in my tests
 		endif
 		libs.Log("Starting contraption sex scene with " + SceneSexActors[0].GetLeveledActorBase().GetName() + " and "+ SceneSexActors[1].GetLeveledActorBase().GetName() + ".")
@@ -1054,7 +1047,7 @@ Float Function CalculateDifficultyModifier(Bool operator = true)
 EndFunction
 
 Function DisplayDifficultyMsg()
-	Int StruggleEscapeChance = Math.Floor(BaseEscapeChance)
+	Int StruggleEscapeChance = BaseEscapeChance as Int
 	String result = "You carefully examine the " + DeviceName + ". "
 	If StruggleEscapeChance > 75
 		result += "This restraint is fairly weak and will not offer much resistance against struggling."
@@ -1121,10 +1114,12 @@ Bool Function CanMakeStruggleEscapeAttempt()
 		return True
 	Else
 		Int HoursToWait = Math.Ceiling(HoursNeeded - HoursPassed)
-		If user == libs.playerRef && (HoursNeeded - HoursPassed) >= 1.0
-			libs.notify("You cannot try to struggle out of this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
-		elseIf user == libs.playerRef && (HoursNeeded - HoursPassed) < 1.0
-			libs.notify("You cannot try to struggle out of this device so soon after the last attempt! You can try again very shortly!", messageBox = true)
+		If user == libs.playerRef
+			If (HoursNeeded - HoursPassed) >= 1.0
+				libs.notify("You cannot try to struggle out of this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
+			else
+				libs.notify("You cannot try to struggle out of this device so soon after the last attempt! You can try again very shortly!", messageBox = true)
+			EndIf
 		Else
 			libs.notify("You cannot help " + user.GetLeveledActorBase().GetName() + " struggle out of their device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
 		EndIf
@@ -1141,10 +1136,12 @@ Bool Function CanMakeBreakEscapeAttempt()
 		return True
 	Else
 		Int HoursToWait = Math.Ceiling(HoursNeeded - HoursPassed)
-		If user == libs.playerRef && (HoursNeeded - HoursPassed) >= 1.0
-			libs.notify("You cannot try to break open this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
-		elseIf user == libs.playerRef && (HoursNeeded - HoursPassed) < 1.0
-			libs.notify("You cannot try to break open this device so soon after the last attempt! You can try again very shortly!", messageBox = true)
+		If user == libs.playerRef
+			If (HoursNeeded - HoursPassed) >= 1.0
+				libs.notify("You cannot try to break open this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
+			else
+				libs.notify("You cannot try to break open this device so soon after the last attempt! You can try again very shortly!", messageBox = true)
+			EndIf
 		Else
 			libs.notify("You cannot help " + user.GetLeveledActorBase().GetName() + " to try breaking open this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
 		EndIf
@@ -1161,10 +1158,12 @@ Bool Function CanMakeLockPickEscapeAttempt()
 		return True
 	Else
 		Int HoursToWait = Math.Ceiling(HoursNeeded - HoursPassed)
-		If user == libs.playerRef && (HoursNeeded - HoursPassed) >= 1.0
-			libs.notify("You cannot try to pick this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
-		elseIf user == libs.playerRef && (HoursNeeded - HoursPassed) < 1.0
-			libs.notify("You cannot try to pick this device so soon after the last attempt! You can try again very shortly!", messageBox = true)
+		If user == libs.playerRef
+			If (HoursNeeded - HoursPassed) >= 1.0
+				libs.notify("You cannot try to pick this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
+			else
+				libs.notify("You cannot try to pick this device so soon after the last attempt! You can try again very shortly!", messageBox = true)
+			EndIf
 		Else
 			libs.notify("You cannot help " + user.GetLeveledActorBase().GetName() + " try to pick this device so soon after the last attempt! You can try again in about " + HoursToWait + " hours.", messageBox = true)
 		EndIf
@@ -1182,7 +1181,7 @@ Bool Function Escape(Float Chance)
 	If Utility.RandomFloat(0.0, 99.9) < (Chance * CalculateDifficultyModifier(True))
 		libs.log("User has escaped " + DeviceName)
 		; increase success counter
-		libs.zadDeviceEscapeSuccessCount.SetValueInt(libs.zadDeviceEscapeSuccessCount.GetValueInt() + 1)				
+		libs.zadDeviceEscapeSuccessCount.SetValue(libs.zadDeviceEscapeSuccessCount.GetValue() + 1)				
 		;libs.SendDeviceEscapeEvent(DeviceInventory, zad_DeviousDevice, true)
 		return True
 	Else
@@ -1267,28 +1266,24 @@ Float Function CalclulateStruggleSuccess()
 	If BaseEscapeChance > 0.0
 		; add 1% for every previous attempt
 		result += EscapeStruggleAttemptsMade		
+		Float akStamina = Libs.PlayerRef.GetActorValue("Stamina")
 		; apply strength bonus
-		If Libs.PlayerRef.GetAV("Stamina") > 25 
-			result += 1.0
-		Endif
-		If Libs.PlayerRef.GetAV("Stamina") > 50
-			result += 2.0
-		Endif
-		If Libs.PlayerRef.GetAV("Stamina") > 75 
+		If akStamina > 75
+			result += 6.0
+		ElseIf akStamina > 50
 			result += 3.0
-		Endif		
+		ElseIf akStamina > 25
+			result += 1.0
+		Endif
 		; apply bonus for total successful escapes - shares that value with wearable restraints
-		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
-		If EscapesMade > 10
-			result += 1.0
-		Endif
-		If EscapesMade > 25
-			result += 1.0
-		Endif
-		If EscapesMade > 50
-			result += 1.0
-		Endif
+		Float EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue()
 		If EscapesMade > 100
+			result += 4.0
+		ElseIf EscapesMade > 50
+			result += 3.0
+		ElseIf EscapesMade > 25
+			result += 2.0
+		ElseIf EscapesMade > 10
 			result += 1.0
 		Endif
 	Endif
@@ -1336,27 +1331,26 @@ Float Function CalclulateBreakSuccess()
 	If BreakDeviceEscapeChance > 0.0
 		; add 1% for every previous attempt
 		result += EscapeBreakAttemptsMade		
-		If Libs.PlayerRef.GetAV("OneHanded") > 25 || Libs.PlayerRef.GetAV("TwoHanded") > 25
+		Float akOneHanded = Libs.PlayerRef.GetActorValue("OneHanded")
+		Float akTwoHanded = Libs.PlayerRef.GetActorValue("TwoHanded")
+		If akOneHanded > 25 || akTwoHanded > 25
 			result += 1.0
 		Endif
-		If Libs.PlayerRef.GetAV("OneHanded") > 50 || Libs.PlayerRef.GetAV("TwoHanded") > 50
+		If akOneHanded > 50 || akTwoHanded > 50
 			result += 2.0
 		Endif
-		If Libs.PlayerRef.GetAV("OneHanded") > 75 || Libs.PlayerRef.GetAV("TwoHanded") > 75
+		If akOneHanded > 75 || akTwoHanded > 75
 			result += 3.0
 		Endif
 		; apply bonus for total successful escapes
-		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
-		If EscapesMade > 10
-			result += 1.0
-		Endif
-		If EscapesMade > 25
-			result += 1.0
-		Endif
-		If EscapesMade > 50
-			result += 1.0
-		Endif
+		Float EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue()
 		If EscapesMade > 100
+			result += 4.0
+		ElseIf EscapesMade > 50
+			result += 3.0
+		ElseIf EscapesMade > 25
+			result += 2.0
+		ElseIf EscapesMade > 10
 			result += 1.0
 		Endif
 	Endif
@@ -1411,37 +1405,35 @@ Function EscapeAttemptLockPick()
 EndFunction
 
 Bool Function HasValidLockPick()
-	Bool HasValidItem = false
 	If AllowLockPick && libs.PlayerRef.GetItemCount(libs.Lockpick) > 0
 		return true
 	EndIf
 	Int i = AllowedLockPicks.Length
-	While i > 0 && !HasValidItem
+	While i > 0
 		i -= 1
 		Form frm = AllowedLockPicks[i]
 		If libs.playerRef.GetItemCount(frm) > 0
-			HasValidItem = True
+			return True
 		EndIf
 	EndWhile
-	return HasValidItem
+	return false
 EndFunction
 
 Bool Function DestroyLockPick()
-	Bool LockPickDestroyed = false
 	If AllowLockPick && libs.PlayerRef.GetItemCount(libs.Lockpick) > 0
 		libs.playerRef.RemoveItem(libs.Lockpick)
 		return True
 	EndIf
 	Int i = AllowedLockPicks.Length
-	While i > 0 && !LockPickDestroyed
+	While i > 0
 		i -= 1
 		Form frm = AllowedLockPicks[i]
-		If libs.playerRef.GetItemCount(frm) > 0 && !(frm As Keyword)
+		If !(frm As Keyword) && libs.playerRef.GetItemCount(frm) > 0
 			libs.playerRef.RemoveItem(frm)
-			LockPickDestroyed = True
+			return True
 		EndIf
 	EndWhile
-	return LockPickDestroyed
+	return false
 EndFunction
 
 Float Function CalclulateLockPickSuccess()
@@ -1450,27 +1442,23 @@ Float Function CalclulateLockPickSuccess()
 	If LockPickEscapeChance > 0.0
 		; add 1% for every previous attempt
 		result += EscapeLockPickAttemptsMade		
-		If Libs.PlayerRef.GetAV("Lockpicking") > 25
-			result += 1.0
-		Endif
-		If Libs.PlayerRef.GetAV("Lockpicking") > 50
-			result += 2.0
-		Endif
-		If Libs.PlayerRef.GetAV("Lockpicking") > 75
+		Float akLockpick = Libs.PlayerRef.GetActorValue("Lockpicking")
+		If akLockpick > 75
+			result += 6.0
+		ElseIf akLockpick > 50
 			result += 3.0
+		ElseIf akLockpick > 25
+			result += 1.0
 		Endif
 		; apply bonus for total successful escapes
-		Int EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValueInt()
-		If EscapesMade > 10
-			result += 1.0
-		Endif
-		If EscapesMade > 25
-			result += 1.0
-		Endif
-		If EscapesMade > 50
-			result += 1.0
-		Endif
+		Float EscapesMade = libs.zadDeviceEscapeSuccessCount.GetValue()
 		If EscapesMade > 100
+			result += 4.0
+		ElseIf EscapesMade > 50
+			result += 3.0
+		ElseIf EscapesMade > 25
+			result += 2.0
+		ElseIf EscapesMade > 10
 			result += 1.0
 		Endif
 	Endif

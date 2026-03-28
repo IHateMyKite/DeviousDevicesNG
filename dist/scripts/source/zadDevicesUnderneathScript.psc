@@ -1,13 +1,11 @@
 scriptname zadDevicesUnderneathScript extends Quest
 
 zadLibs Property libs Auto
-import zadNativeFunctions
 Armor Property zad_DeviceHider Auto
 ArmorAddon Property zad_DeviceHiderAA Auto
 
-int[] Property SlotMaskFilters Auto
-int[] Property SlotMaskUsage Auto
-int[] Property ShiftCache Auto
+int[] Property SlotMaskFilters Auto Hidden
+int[] Property ShiftCache Auto Hidden
 
 int Property SlotMask Auto ; Avoid repeated lookups
 
@@ -103,7 +101,7 @@ Function SyncSetting()
 EndFunction
 
 Function Maintenance()
-    SyncSetting()
+    ZadNativeFunctions.SyncSetting(SlotMaskFilters,Setting)
 EndFunction
 
 Function ApplySlotmask(Actor akActor)

@@ -71,10 +71,7 @@ MiscObject Property zadc_kit_xcross Auto
 
 ; Checks if the given reference is a DDC furniture device
 Bool Function GetIsFurnitureDevice(ObjectReference FurnitureDevice)
-	If FurnitureDevice && FurnitureDevice.HasKeyword(zadc_FurnitureDevice)
-		return True
-	EndIf
-	return False
+	return FurnitureDevice && FurnitureDevice.HasKeyword(zadc_FurnitureDevice)
 EndFunction
 
 ; Returns the actor currently locked in a given device (or none if not a valid furniture device, or if it's not occupied)
@@ -133,12 +130,9 @@ EndFunction
 ; Retrieves the furniture device closest to the player, if there is any in the active cell.
 ObjectReference Function GetClosestFurnitureDevice()
 	; need to force re/start the quest to fill the alias
-	if zadc_nearbyfurniture.IsRunning()		
-		zadc_nearbyfurniture.Stop()
-		zadc_nearbyfurniture.Start()
-	Else
-		zadc_nearbyfurniture.Start()
-	EndIf
+	zadc_nearbyfurniture.Stop()
+	zadc_nearbyfurniture.Start()
+
 	ReferenceAlias device = zadc_nearbyfurniture.GetAlias(0) As ReferenceAlias	; That's the only alias in that quest
 	If device
 		Return device.GetReference()
@@ -181,11 +175,7 @@ EndFunction
 
 ; Retrieves the override pose. Returns none if no override pose is set.
 Package Function GetOverridePose(ObjectReference FurnitureDevice)	
-	Package Pose = StorageUtil.GetFormValue(FurnitureDevice, "DDC_OverridePose") As Package
-	If Pose
-		return Pose
-	EndIf
-	Return None
+	return StorageUtil.GetFormValue(FurnitureDevice, "DDC_OverridePose") As Package
 EndFunction
 
 ; clears the override pose
@@ -196,7 +186,7 @@ EndFunction
 ; Sets the timed release for a given device to x hours and activates the auto-release feature. This can also be used to renew the timer by passing ResetStartTime = True.
 ; Mind you that these settings may be overriden if the player is able to use the dialogue to place herself or an NPC in the device -after- this
 ; function was called, but she cannot after the subject was placed in the device. Use it accordingly.
-Bool Function SetTimedRelease(ObjectReference FurnitureDevice, Int Hours, Bool ResetStartTime = False)
+Function SetTimedRelease(ObjectReference FurnitureDevice, Int Hours, Bool ResetStartTime = False)
 	zadcFurnitureScript fs = FurnitureDevice as zadcFurnitureScript
 	if fs 
 		fs.isSelfBondage = True
@@ -236,7 +226,7 @@ Bool Function LockActorV2(Actor akActor, ObjectReference FurnitureDevice, Packag
 EndFunction
 
 ; Unlock an actor. This bypasses all checks normally performed (e.g. keys or lock shields)
-Bool Function UnlockActor(Actor akActor)
+Function UnlockActor(Actor akActor)
 	zadcFurnitureScript fs = GetDevice(akActor) as zadcFurnitureScript
 	if fs && fs.User		
 		fs.UnlockActor()		
@@ -378,12 +368,12 @@ Event OnKeyDown(Int KeyCode)
 	If UI.IsMenuOpen("Console") || UI.IsMenuOpen("Console Native UI Menu")
 		Return
 	EndIf
-	If (KeyCode == libs.Config.FurnitureNPCActionKey)
-		FurnitureAction()
-	Endif	
-	If (KeyCode == 0xD1) 
-		Test()
-	Endif	
+
+	FurnitureAction()
+
+	;If (KeyCode == 0xD1) 
+	;	Test()
+	;Endif	
 EndEvent
 
 Bool Function GetIsFemale(Actor act)
@@ -404,7 +394,7 @@ Function Test()
 	return
 	ObjectReference objr = Game.GetCurrentCrosshairRef()	
 	Actor act = objr As Actor	
-	If act && act == Game.GetPlayer()		
+	If act == libs.PlayerRef
 		; sanity check
 		return
 	EndIf	
@@ -415,10 +405,7 @@ EndFunction
 
 ; checks if this person is available for a scene
 bool Function IsAnimating(actor akActor)
-	if akActor.IsOnMount()
-		return True
-	endif
-	return (akActor.IsInFaction(libs.zadAnimatingFaction) || akActor.IsInFaction(libs.Sexlab.AnimatingFaction))
+	return akActor.IsOnMount() || (akActor.IsInFaction(libs.zadAnimatingFaction) || akActor.IsInFaction(libs.Sexlab.AnimatingFaction))
 EndFunction
 
 ; Parameters are persitant in pex files. 2-stage function call to avoid breaking older mods.
@@ -432,7 +419,7 @@ EndFunction
 Function FurnitureActionV2(Bool AllowActorInScene = false)
 	ObjectReference objr = Game.GetCurrentCrosshairRef()
 	Actor act = objr As Actor	
-	If act && act == Game.GetPlayer()		
+	If act == libs.PlayerRef
 		; sanity check
 		return
 	EndIf	
@@ -445,18 +432,18 @@ Function FurnitureActionV2(Bool AllowActorInScene = false)
 			debug.notification("This device is occupied.")				
 		EndIf
 	EndIf
-	If objr.HasKeyword(zadc_FurnitureDevice) && !SelectedUser
+	;If objr.HasKeyword(zadc_FurnitureDevice) && !SelectedUser
 		; no actor selected, so we can manipulate the device instead!
 		
-	EndIf
+	;EndIf
 	If act
 		; Is the target locked in a device?
-		ObjectReference obj = GetDevice(act)
-		If obj
+		objr = GetDevice(act)
+		If objr
 			; yes, display the unlock NPC dialogue
 			debug.notification("Freeing " + act.GetActorBase().GetName())
 			; sending the player as operator, so the furniture script can tell freeing the user apart from an escape attempt!
-			obj.Activate(Game.GetPlayer())
+			objr.Activate(libs.PlayerRef)
 			return
 		EndIf
 		If !SelectedUser				

@@ -3,8 +3,6 @@ ScriptName zadGagNoFoodEffect extends ActiveMagicEffect
 ; Libraries
 zadLibs Property Libs Auto
 
-actor Property Target Auto
-
 ObjectReference Property Refrigerator Auto
 Keyword Property FoodKeyword Auto
 Keyword Property RawFoodKeyword Auto

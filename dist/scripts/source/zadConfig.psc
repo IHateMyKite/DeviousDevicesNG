@@ -15,7 +15,7 @@ String File = "../DD/DDConfig.json"
 
 ;Config Menu Script Version
 Int Function GetVersion()
-	Return 35
+	Return 36
 EndFunction
 
 ;Difficulty
@@ -220,18 +220,13 @@ Event OnConfigInit()
 	SetupSoundDuration()
 	SetupSlotMasks()
 	SlotMaskOIDS = new int[128]
+	libs.GameDaysPassed = Game.GetForm(0x39) as GlobalVariable
 EndEvent
 
 Event OnVersionUpdate(Int newVersion)
 	libs.Log("OnVersionUpdate("+newVersion+"/"+CurrentVersion+")")
 	if newVersion != CurrentVersion
-		SlotMaskOIDS = new int[128]
-		SetupPages()
-		SetupDifficulties()
-		SetupEscapeDifficulties()
-		SetupBlindfolds()
-		SetupSoundDuration()
-		eventOIDs = new int[125]
+		OnConfigInit()
 		if !darkfogStrength
 			darkfogStrength = 500
 		EndIf
@@ -812,7 +807,7 @@ State DarkFogStrengthST
 		SendModEvent("zadBlindfoldEffectUpdate")
 	EndEvent
 	Event OnDefaultST()
-		darkfogStrength = 500 as Int
+		darkfogStrength = 500
 		SetSliderOptionValueST(darkfogStrength, "{0}")
 		SendModEvent("zadBlindfoldEffectUpdate")
 	EndEvent
@@ -1549,7 +1544,7 @@ Function ImportEvents()
 EndFunction
 
 Function ExportSettings()
-	JsonUtil.SetStringValue(File, "ExportLabel", Game.GetPlayer().GetLeveledActorBase().GetName()+" - "+Utility.GetCurrentRealTime() as int)
+	JsonUtil.SetStringValue(File, "ExportLabel", libs.PlayerRef.GetLeveledActorBase().GetName()+" - "+Utility.GetCurrentRealTime() as int)
 	JsonUtil.SetIntValue(File, "Version", GetVersion())
 	ExportDevicesUnderneath()
 	ExportEvents()
