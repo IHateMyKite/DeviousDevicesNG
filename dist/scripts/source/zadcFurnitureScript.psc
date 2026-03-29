@@ -336,7 +336,14 @@ Function LockActor(actor act)
 	EndIf
 	ApplyEffects(user)
 	ApplyDevices(user)	
+	user.AddToFaction(clib.zadcNGInContraptionFaction)
 	user.SetFactionRank(clib.zadcNGInContraptionFaction, 1)
+	;50% chance the user gets placed in the altanim faction
+	;actors in the altanim faction will have different contraption idle animation
+	If ( Utility.RandomFloat( 0.0 , 49.9 ) < 50.0 )
+		user.AddToFaction( clib.zadcNGAltAnim )
+		user.SetFactionRank( clib.zadcNGAltAnim, 1 )
+	EndIf
 	RegisterForSingleUpdate(30)	
 	LastBreakEscapeAttemptAt = 0.0
 	LastStruggleEscapeAttemptAt = 0.0
@@ -386,7 +393,10 @@ Function UnlockActor()
 	RemoveEffects(user)
 	clib.ResetNiOverrideOverride(user)
 	RemoveDevices(user)
+	user.SetFactionRank(clib.zadcNGInContraptionFaction, 0)
 	user.RemoveFromFaction(clib.zadcNGInContraptionFaction)
+	user.SetFactionRank( clib.zadcNGAltAnim, 0 )
+	user.RemoveFromFaction( clib.zadcNGAltAnim )
 	;If ForceStripActor			
 	;	clib.RestoreOutfit(user)
 	;EndIf

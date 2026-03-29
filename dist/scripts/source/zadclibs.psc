@@ -23,6 +23,7 @@ Armor Property zadc_NoWaitItem Auto
 Armor Property zadc_PrisonerChainsInventory Auto
 Armor Property zadc_PrisonerChainsRendered Auto
 Faction Property zadcNGInContraptionFaction Auto
+Faction Property zadcNGAltAnim Auto
 
 Actor Property SelectedUser Auto Hidden
 
@@ -34,6 +35,7 @@ Activator Property zadc_gallowspole_strappado Auto
 Activator Property zadc_gallowspole_suspend_hogtie Auto
 Activator Property zadc_gallowspole_upside_down Auto
 Activator Property zadc_gallowspole_woodenhorse Auto
+Activator Property zadc_gibbet Auto
 Activator Property zadc_Pillory Auto
 Activator Property zadc_Pillory2 Auto
 Activator Property zadc_RestraintPost Auto
@@ -54,6 +56,7 @@ MiscObject Property zadc_kit_gallowspoleoverhead Auto
 MiscObject Property zadc_kit_gallowspolestrappado Auto
 MiscObject Property zadc_kit_gallowspoleupsidedown Auto
 MiscObject Property zadc_kit_gallowspolewoodenhorse Auto
+MiscObject Property zadc_kit_gibbet Auto
 MiscObject Property zadc_kit_pillory Auto
 MiscObject Property zadc_kit_pillory2 Auto
 MiscObject Property zadc_kit_restraintpost Auto
