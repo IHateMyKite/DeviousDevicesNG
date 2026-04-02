@@ -340,7 +340,7 @@ Function LockActor(actor act)
 	user.SetFactionRank(clib.zadcNGInContraptionFaction, 1)
 	;50% chance the user gets placed in the altanim faction
 	;actors in the altanim faction will have different contraption idle animation
-	If ( Utility.RandomFloat( 0.0 , 49.9 ) < 50.0 )
+	If ( Utility.RandomFloat( 0.0 , 99.0 ) < 50.0 )
 		user.AddToFaction( clib.zadcNGAltAnim )
 		user.SetFactionRank( clib.zadcNGAltAnim, 1 )
 	EndIf
