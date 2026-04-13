@@ -252,9 +252,9 @@ Event OnInit()
 		validKeys[3] = Input.GetMappedKey("Strafe Right", 0)
 	EndIf
 
-	requiredCode = new int[16]
-	requiredDurations = new float[16]
-	enteredCode = new int[16]
+	requiredCode = new int[64]
+	requiredDurations = new float[64]
+	enteredCode = new int[64]
 EndEvent
 
 Event OnUpdate()
@@ -417,9 +417,12 @@ Function EndMinigame()
 	UnregisterForAllKeys()
 	contraption.scriptedDevice = false
 	contraption = None
+<<<<<<< main
 	; Message.ResetHelpMessage("zadcNG_ContraptionMinigame03_01")
 	; Message.ResetHelpMessage("zadcNG_ContraptionMinigame03_02")
 	; Message.ResetHelpMessage("zadcNG_ContraptionMinigame03_03")
+=======
+>>>>>>> main
 	cooldown = false
 	_isSuspended = false
 	DDLibs.Log("[zadc-NG] (Contraption struggle escape minigame) Stopped minigame.")
@@ -542,6 +545,7 @@ Function GenerateNewRequiredCode()
 	; For long codes (N > M, say N=6, M=4) we will have duplicate keys, but only minimally e.g. [1, 0, 3, 2, 1, 2].
 	; Numbers only appear N/M times at maximum, and only once per block. This pattern can be figured out by a player.
 	int blockIdx = N / M
+<<<<<<< main
 	int startIdx
 	int j
 	int swap
@@ -556,9 +560,29 @@ Function GenerateNewRequiredCode()
 			requiredCode[startIdx + j] = requiredCode[startIdx + i]
 			requiredCode[startIdx + i] = swap
 		EndWhile
+=======
+	While blockIdx > 0
+		blockIdx -= 1
+		int startIdx = blockIdx * M
+		ShuffleOneCodeBlock(startIdx, M)
+>>>>>>> main
 	EndWhile
 	
 	DDLibs.Log("[zadc-NG] (Contraption struggle escape minigame) New required code is first " + LengthOfSequence + " digits of: " + requiredCode + " with required durations: " + requiredDurations)
+EndFunction
+
+Function ShuffleOneCodeBlock(int startIdx, int blockLength)
+	; Fisher-Yates (aka Knuth) shuffle
+	int j
+	int swap
+	int i = blockLength
+	While i > 0
+		i -= 1
+		j = Utility.RandomInt(0, i)
+		swap = requiredCode[startIdx + j]
+		requiredCode[startIdx + j] = requiredCode[startIdx + i]
+		requiredCode[startIdx + i] = swap
+	EndWhile
 EndFunction
 
 Function ResetEnteredCode()
