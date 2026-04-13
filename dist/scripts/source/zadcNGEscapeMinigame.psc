@@ -42,6 +42,7 @@ Function StartMinigame()
 	DDLibs.Log("[zadc-NG] (Contraption struggle escape minigame) Started minigame.")
 
 	; Show a tutorial message to get started
+	cooldown = false
 	If Config.ShowMinigameTutorial
 		If Game.UsingGamepad()
 			zadcNG_Minigame03TutorialMsg01Controller.ShowAsHelpMessage("zadcNG_ContraptionMinigame03_01", afDuration=6, afInterval=0, aiMaxTimes=1)
@@ -251,9 +252,9 @@ Event OnInit()
 		validKeys[3] = Input.GetMappedKey("Strafe Right", 0)
 	EndIf
 
-	requiredCode = new int[16]
-	requiredDurations = new float[16]
-	enteredCode = new int[16]
+	requiredCode = new int[64]
+	requiredDurations = new float[64]
+	enteredCode = new int[64]
 EndEvent
 
 Event OnUpdate()
@@ -276,7 +277,9 @@ Function Fail()
 	; The extra chance ranges from +10% to +60%. This makes it quite risky to fail during vibration events. Maybe just sit back instead for a bit, hm? ;-)
 	float critFailPct = CriticalFailChancePercent
 	if critFailPct > 0.0 && DDLibs.IsVibrating(PlayerRef) ; If crit fail% is 0, assume there's a good reason for it and don't increase it.
-		zadcNG_Minigame03TutorialMsg06.ShowAsHelpMessage("zadcNG_ContraptionMinigame06_01", afDuration=6, afInterval=0, aiMaxTimes=1)
+		If Config.ShowMinigameTutorial
+			zadcNG_Minigame03TutorialMsg06.ShowAsHelpMessage("zadcNG_ContraptionMinigame06_01", afDuration=6, afInterval=0, aiMaxTimes=1)
+		endIf
 		critFailPct += 10.0 + DDlibs.Aroused.GetActorExposure(PlayerRef) / 2.0
 	EndIf
 	
@@ -284,11 +287,15 @@ Function Fail()
 	If Utility.RandomFloat(0, 100) < critFailPct
 		; If so, roll a new sequence, possibly a longer one than before (escalation). Play SFX and VFX for some feedback.
 		CriticalFail(EscalationChancePercent)
-		zadcNG_Minigame03TutorialMsg05.ShowAsHelpMessage("zadcNG_ContraptionMinigame05_01", afDuration=6, afInterval=0, aiMaxTimes=1)
+		If Config.ShowMinigameTutorial
+			zadcNG_Minigame03TutorialMsg05.ShowAsHelpMessage("zadcNG_ContraptionMinigame05_01", afDuration=6, afInterval=0, aiMaxTimes=1)
+		endIf
 	Else
 		; Regular fail. Play (different) VFX/SFX and only reset the entered code, but don't make it longer.
 		RegularFail()
-		zadcNG_Minigame03TutorialMsg04.ShowAsHelpMessage("zadcNG_ContraptionMinigame04_01", afDuration=6, afInterval=0, aiMaxTimes=1)
+		If Config.ShowMinigameTutorial
+			zadcNG_Minigame03TutorialMsg04.ShowAsHelpMessage("zadcNG_ContraptionMinigame04_01", afDuration=6, afInterval=0, aiMaxTimes=1)
+		endIf
 	EndIf
 EndFunction
 
@@ -410,9 +417,6 @@ Function EndMinigame()
 	UnregisterForAllKeys()
 	contraption.scriptedDevice = false
 	contraption = None
-	Message.ResetHelpMessage("zadcNG_ContraptionMinigame03_01")
-	Message.ResetHelpMessage("zadcNG_ContraptionMinigame03_02")
-	Message.ResetHelpMessage("zadcNG_ContraptionMinigame03_03")
 	cooldown = false
 	_isSuspended = false
 	DDLibs.Log("[zadc-NG] (Contraption struggle escape minigame) Stopped minigame.")
@@ -521,30 +525,41 @@ Function GenerateNewRequiredCode()
 	; Initialize as simple sequence: fill the whole array of length A as [0, 1, ..., M-1, 0, 1, ..., M-1] where M is the number of keys that can be pressed.
 	; Map each number to a valid input button / key.
 	; Generate the required durations while we're at it.
-	int i = requiredCode.Length
+	int N = requiredCode.Length
+	int M = validKeys.Length
+	int i = N
 	While i > 0
 		i -= 1
-		requiredCode[i] = validKeys[i % validKeys.Length]
+		requiredCode[i] = validKeys[i % M]
 		requiredDurations[i] = Utility.RandomFloat(MinKeyHoldTime, MaxKeyHoldTime)
 	EndWhile
 
-	; Shuffle the code into random order with Fisher-Yates (aka Knuth) shuffle
-	int swap
-	i = validKeys.Length ; This is intentionally the *input key* array length M, so that e.g. if M=4, N=3 and A=12, we only shuffle [0,1,2,3] of a sequence [0,1,2,3,0,1,2,3,0,1,2,3]. This guarantees that numbers are only minimally reoccurring.
-	While i > 0
-		i -= 1
-		int j = Utility.RandomInt(0, i)
-		swap = requiredCode[j]
-		requiredCode[j] = requiredCode[i]
-		requiredCode[i] = swap
-	EndWhile
-
-	; We will take the first N digits of this code to be the required code.
+	; Shuffle the code per block of M keys into random order with Fisher-Yates (aka Knuth) shuffle.
 	; For short codes (say N=3, M=4) we could thus have e.g. [1, 0, 3] i.e. one input key is not used.
 	; For long codes (N > M, say N=6, M=4) we will have duplicate keys, but only minimally e.g. [1, 0, 3, 2, 1, 2].
-	; Numbers can only appear N/M times at maximum. This is a pattern that can be figured out by a player.
+	; Numbers only appear N/M times at maximum, and only once per block. This pattern can be figured out by a player.
+	int blockIdx = N / M
+	While blockIdx > 0
+		blockIdx -= 1
+		int startIdx = blockIdx * M
+		ShuffleOneCodeBlock(startIdx, M)
+	EndWhile
 	
 	DDLibs.Log("[zadc-NG] (Contraption struggle escape minigame) New required code is first " + LengthOfSequence + " digits of: " + requiredCode + " with required durations: " + requiredDurations)
+EndFunction
+
+Function ShuffleOneCodeBlock(int startIdx, int blockLength)
+	; Fisher-Yates (aka Knuth) shuffle
+	int j
+	int swap
+	int i = blockLength
+	While i > 0
+		i -= 1
+		j = Utility.RandomInt(0, i)
+		swap = requiredCode[startIdx + j]
+		requiredCode[startIdx + j] = requiredCode[startIdx + i]
+		requiredCode[startIdx + i] = swap
+	EndWhile
 EndFunction
 
 Function ResetEnteredCode()

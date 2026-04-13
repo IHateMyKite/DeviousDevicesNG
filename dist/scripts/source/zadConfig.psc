@@ -15,7 +15,7 @@ String File = "../DD/DDConfig.json"
 
 ;Config Menu Script Version
 Int Function GetVersion()
-	Return 36
+	Return 37
 EndFunction
 
 ;Difficulty
@@ -880,7 +880,7 @@ State MinigameMinSequenceLengthST
 	Event OnSliderOpenST()
 		SetSliderDialogStartValue(MinigameMinSequenceLength)
 		SetSliderDialogDefaultValue(3)
-		SetSliderDialogRange(1, 16)
+		SetSliderDialogRange(1, 64)
 		SetSliderDialogInterval(1)
 	EndEvent
 	Event OnSliderAcceptST(Float value)
@@ -906,7 +906,7 @@ State MinigameMaxSequenceLengthST
 	Event OnSliderOpenST()
 		SetSliderDialogStartValue(MinigameMaxSequenceLength)
 		SetSliderDialogDefaultValue(9)
-		SetSliderDialogRange(1, 16) ; (Don't set the max of the range larger than the array size in the minigame script!)
+		SetSliderDialogRange(1, 64) ; (Don't set the max of the range larger than the array size in the minigame script!)
 		SetSliderDialogInterval(1)
 	EndEvent
 	Event OnSliderAcceptST(Float value)
@@ -1609,7 +1609,7 @@ EndFunction
 Function ImportSettings()
 	Int version = 0
 	If JsonUtil.GetIntValue(File, "Version", version) != GetVersion()
-		If !ShowMessage("Saved config is for another version of DD, aborting.")
+		If !ShowMessage("Saved config is for another version of DD, try import anyway?")
 			Return
 		Endif
 	EndIf
