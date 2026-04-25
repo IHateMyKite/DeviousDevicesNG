@@ -15,7 +15,7 @@ String File = "../DD/DDConfig.json"
 
 ;Config Menu Script Version
 Int Function GetVersion()
-	Return 37
+	Return 38
 EndFunction
 
 ;Difficulty
@@ -225,10 +225,16 @@ EndEvent
 
 Event OnVersionUpdate(Int newVersion)
 	libs.Log("OnVersionUpdate("+newVersion+"/"+CurrentVersion+")")
-	if newVersion != CurrentVersion
+	; not on fresh install
+	if CurrentVersion > 0
 		OnConfigInit()
 		if !darkfogStrength
 			darkfogStrength = 500
+		EndIf
+		If CurrentVersion < 38
+			; oops!
+			libs.zadNGOrgasmFaction = Game.GetFormFromFile(0xA200C0, "Devious Devices - Integration.esm") as Faction
+			libs.zadNGEdgedFaction = Game.GetFormFromFile(0xA200C1, "Devious Devices - Integration.esm") as Faction
 		EndIf
 	EndIf	
 EndEvent
