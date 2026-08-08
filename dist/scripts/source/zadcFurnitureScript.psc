@@ -931,9 +931,9 @@ Bool Function SexScene(Actor Partner, String AnimationName = "")
 		SceneSexActors[1] = Partner	
 		RegisterForModEvent("HookAnimationEnd_DDCEnd", "OnDDCSLEnd")    
 		ActorUtil.RemovePackageOverride(User, CurrentPose)	; otherwise the anims go awry - krzp	
-		If libs.HasPPlus
-			Debug.SendAnimationEvent(User, "IdleForceDefaultState")	; sneaky v2 p+ compatibility to make sure animations start from a default idle, otherwise the first stage on the actor in a contraption didn't play in my tests
-		endif
+;		If libs.HasPPlus - commented out since P+ 2.17+ fixed this, will remove completely in a few versions - krzp
+;			Debug.SendAnimationEvent(User, "IdleForceDefaultState")	; sneaky v2 p+ compatibility to make sure animations start from a default idle, otherwise the first stage on the actor in a contraption didn't play in my tests
+;		endif
 		libs.Log("Starting contraption sex scene with " + SceneSexActors[0].GetLeveledActorBase().GetName() + " and "+ SceneSexActors[1].GetLeveledActorBase().GetName() + ".")
 		libs.SexLab.StartSex(Positions = SceneSexActors, anims = Sanims, centeron = User, allowbed = false, hook = "DDCEnd")
 		return true
