@@ -15,7 +15,7 @@ String File = "../DD/DDConfig.json"
 
 ;Config Menu Script Version
 Int Function GetVersion()
-	Return 37
+	Return 38
 EndFunction
 
 ;Difficulty
@@ -220,6 +220,7 @@ Event OnConfigInit()
 	SetupSoundDuration()
 	SetupSlotMasks()
 	SlotMaskOIDS = new int[128]
+	eventOIDs = new int[125]
 	libs.GameDaysPassed = Game.GetForm(0x39) as GlobalVariable
 EndEvent
 
