@@ -78,7 +78,7 @@ namespace DeviousDevices
         //called every once in the while by game to update 3d models on actor
         static void InitWornArmor(RE::TESObjectARMO* a_armor,RE::Actor* a_actor,RE::BSTSmartPointer<RE::BipedAnim>* a_biped);
 
-        //upúdate actor 3d
+        //update actor 3d
         static bool Update3D(RE::Actor* a_actor);
 
         //update actor serialy

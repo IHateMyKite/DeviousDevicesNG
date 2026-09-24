@@ -7,10 +7,10 @@
   "registries": [
     {
       "kind": "git",
-      "repository": "https://gitlab.com/colorglass/vcpkg-colorglass",
-      "baseline": "6309841a1ce770409708a67a9ba5c26c537d2937",
+      "repository": "https://github.com/naitro2010/skyrim-vcpkg-ports",
+      "baseline": "2630ab53da47eac8adf3d8b52d77d74586cb4cfe",
       "packages": [
-        "commonlibsse-ng"
+        "commonlibsse-gg"
       ]
     }
   ]

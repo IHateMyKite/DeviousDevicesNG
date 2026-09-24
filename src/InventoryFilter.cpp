@@ -39,9 +39,9 @@ bool DeviousDevices::InventoryFilter::TakeFilter(RE::Actor* a_actor, RE::TESBoun
     bool loc_rollFailure = distr(gen) < 80.0f;
 
     if (loc_rollFailure) {
-        RE::DebugNotification("Locked in bondage mittens, you cannot pick up the item.");
+        RE::SendHUDMessage::ShowHUDMessage("Locked in bondage mittens, you cannot pick up the item.");
     } else {
-        RE::DebugNotification("Despite wearing bondage mittens, you manage to pick up the item.");
+        RE::SendHUDMessage::ShowHUDMessage("Despite wearing bondage mittens, you manage to pick up the item.");
     }
 
     return loc_rollFailure;
@@ -83,7 +83,7 @@ bool DeviousDevices::InventoryFilter::EquipFilter(RE::Actor* a_actor, RE::TESBou
             ERROR("Cant check if inventory menu is open because UI singleton is not initiated")
 
         if ((!loc_checkinventory || loc_invMenu.get()) && LibFunctions::GetSingleton()->ActorHasBlockingGag(a_actor)) {
-            RE::DebugNotification("You can't eat or drink while wearing this gag.");
+            RE::SendHUDMessage::ShowHUDMessage("You can't eat or drink while wearing this gag.");
             return true;
         }
     }
@@ -98,7 +98,7 @@ bool DeviousDevices::InventoryFilter::EquipFilter(RE::Actor* a_actor, RE::TESBou
             ERROR("Cant check if inventory menu is open because UI singleton is not initiated")
 
         if (loc_magMenu.get()) {
-            RE::DebugNotification("You can't equip this while wearing this gag!");
+            RE::SendHUDMessage::ShowHUDMessage("You can't equip this while wearing this gag!");
         }
         LOG("EquipFilter({},{}) - Prevented equipping shout",a_actor->GetName(),a_item->GetName())
         return true;
@@ -109,7 +109,7 @@ bool DeviousDevices::InventoryFilter::EquipFilter(RE::Actor* a_actor, RE::TESBou
     if ((a_item->Is(RE::FormType::Armor) && !LibFunctions::GetSingleton()->IsDevice(a_item->As<RE::TESObjectARMO>())))
     {
         RE::TESObjectARMO* loc_armor = reinterpret_cast<RE::TESObjectARMO*>(a_item);
-        const auto loc_mask = (int)loc_armor->GetSlotMask();
+        const auto loc_mask = (int)loc_armor->GetSlotMask().underlying();
         RE::TESObjectARMO* loc_worn = LibFunctions::GetSingleton()->GetWornArmor(a_actor,loc_mask);
         if (loc_worn && LibFunctions::GetSingleton()->IsDevice(loc_worn))
         {
@@ -128,7 +128,7 @@ bool DeviousDevices::InventoryFilter::EquipFilter(RE::Actor* a_actor, RE::TESBou
             {
                 const std::string loc_msg = loc_heavyBondage ? "You can't equip this with your hands tied!"
                                                              : "You can't equip this while locked in bondage mittens!";
-                RE::DebugNotification(loc_msg.c_str());
+                RE::SendHUDMessage::ShowHUDMessage(loc_msg.c_str());
             }
             LOG("EquipFilter({},{}) - Prevented equipping weapon/light",a_actor->GetName(),a_item->GetName())
             // Equipping anything should be disabled when bound. Even if menu is closed. 
@@ -158,7 +158,7 @@ bool DeviousDevices::InventoryFilter::EquipFilter(RE::Actor* a_actor, RE::TESBou
 
             if ((loc_isshield || (loc_invMenu.get() || loc_magMenu.get())) && a_actor->IsPlayerRef()) 
             {
-                RE::DebugNotification(loc_msg.c_str());
+                RE::SendHUDMessage::ShowHUDMessage(loc_msg.c_str());
                 LOG("EquipFilter({},{}) - Prevented equipping armor",a_actor->GetName(),a_item->GetName())
                 return true;
             }
@@ -198,7 +198,7 @@ bool DeviousDevices::InventoryFilter::EquipFilter(RE::Actor* a_actor, RE::TESBou
                 {
                     const std::string loc_msg = loc_heavyBondage ? "You can't equip this with your hands tied!"
                                                                  : "You can't equip this while locked in bondage mittens!";
-                    RE::DebugNotification(loc_msg.c_str());
+                    RE::SendHUDMessage::ShowHUDMessage(loc_msg.c_str());
                 }
                 LOG("EquipFilter({},{}) - Prevented equipping spell",a_actor->GetName(),a_item->GetName())
                 // Equipping anything should be disabled when bound. Even if menu is closed. 

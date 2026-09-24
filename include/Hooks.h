@@ -309,7 +309,7 @@ namespace DeviousDevices {
                 ERROR("Failed to install papyrus hook on EquipObject2");
             }
 
-            const uintptr_t loc_unequipTargetAddress = RE::Offset::ActorEquipManager::UnequipObject.address();
+            const uintptr_t loc_unequipTargetAddress = RELOCATION_ID(37945, 38901).address();
             _UnequipObject = (OriginalUnequipObject)loc_unequipTargetAddress;
 
             DetourTransactionBegin();

@@ -247,14 +247,14 @@ namespace DeviousDevices {
     // === Copied from ConsoleUtilSSE NG https://github.com/VersuchDrei/ConsoleUtilSSE/tree/master
     static inline RE::NiPointer<RE::TESObjectREFR> ConsoleUtil_GetSelectedRef() 
     {
-        REL::Relocation<RE::ObjectRefHandle*> selectedRef{ RELOCATION_ID(519394, REL::Module::get().version().patch() < 1130 ? 405935 : 504099) };
+        REL::Relocation<RE::ObjectRefHandle*> selectedRef{ RELOCATION_ID(519394, ((REL::Module::get().version().patch() < 1130) && (REL::Module::get().version().minor() < 7)) ? 405935 : 504099) };
         auto handle = *selectedRef;
         return handle.get();
     }
     static inline void ConsoleUtil_CompileAndRun(RE::Script* script, RE::TESObjectREFR* targetRef, RE::COMPILER_NAME name = RE::COMPILER_NAME::kSystemWindowCompiler)
     {
         RE::ScriptCompiler compiler;
-        REL::Relocation<void(RE::Script* script, RE::ScriptCompiler* compiler, RE::COMPILER_NAME name, RE::TESObjectREFR* targetRef)> func{ RELOCATION_ID(21416, REL::Module::get().version().patch() < 1130 ? 21890 : 441582) };
+        REL::Relocation<void(RE::Script* script, RE::ScriptCompiler* compiler, RE::COMPILER_NAME name, RE::TESObjectREFR* targetRef)> func{ RELOCATION_ID(21416,((REL::Module::get().version().patch() < 1130) && (REL::Module::get().version().minor() < 7)) ? 21890 : 441582) };
         func(script, &compiler, name, targetRef);
     }
     void ExecuteConsoleCmd(PAPYRUSFUNCHANDLE, std::string a_cmd) 

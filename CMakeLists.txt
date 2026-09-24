@@ -82,6 +82,8 @@ message("Options:")
 option(BUILD_TESTS "Build unit tests." OFF)
 message("\tTests: ${BUILD_TESTS}")
 
+find_package(directxtk CONFIG REQUIRED)
+
 ########################################################################################################################
 ## Configure target DLL
 ########################################################################################################################

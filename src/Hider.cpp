@@ -166,7 +166,7 @@ bool DeviousDevices::DeviceHiderManager::ProcessHider(RE::TESObjectARMO* a_armor
 
         if (loc_armor != nullptr && (!loc_onlydevices || LibFunctions::GetSingleton()->IsDevice(loc_armor)))
         {
-            loc_devices[loc_armor] = (uint32_t)loc_armor->GetSlotMask();
+            loc_devices[loc_armor] = (uint32_t)loc_armor->GetSlotMask().underlying();
         }
         return RE::BSContainer::ForEachResult::kContinue;
     });
@@ -238,7 +238,7 @@ bool DeviousDevices::DeviceHiderManager::CheckForceStrip(RE::TESObjectARMO* a_ar
     {
         const int loc_armorfilter   = loc_data->second.armorfilter;
         const int loc_devicefilter  = loc_data->second.devicefilter;
-        const int loc_mask          = (int)a_armor->GetSlotMask();
+        const int loc_mask          = (int)a_armor->GetSlotMask().underlying();
 
         const bool loc_isdevice = LibFunctions::GetSingleton()->IsDevice(a_armor);
         if (((loc_mask & loc_devicefilter) && loc_isdevice) || ((loc_mask & loc_armorfilter) && !loc_isdevice))
@@ -276,7 +276,7 @@ bool DeviousDevices::DeviceHiderManager::CheckNPCArmor(RE::TESObjectARMO* a_armo
 
 bool DeviousDevices::DeviceHiderManager::CheckHiderSlots(RE::TESObjectARMO* a_armor, uint8_t a_min, uint8_t a_max, const std::unordered_map<RE::TESObjectARMO*,uint32_t>& a_slots) const
 {
-    const int loc_mask = static_cast<int>(a_armor->GetSlotMask());
+    const int loc_mask = static_cast<int>(a_armor->GetSlotMask().underlying());
     const std::vector<int>& loc_filter = DeviceHiderManager::GetSingleton()->GetFilter();
 
     for (auto&& [device,mask] : a_slots)
@@ -331,7 +331,7 @@ void DeviousDevices::DeviceHiderManager::InitWornArmor(RE::TESObjectARMO* a_armo
         bool hider_override=false;
         for (int slot: hider_override_slots) {
             if (slot >= 30) {
-                if ((((unsigned int)a_armor->GetSlotMask()) & (1<<(slot-30)))!=0) {
+                if ((((unsigned int)a_armor->GetSlotMask().underlying()) & (1<<(slot-30)))!=0) {
                     hider_override=true;
                 }
             }

@@ -8,12 +8,25 @@
         "plugin": {
             "description": "Build the SKSE plugin.",
             "dependencies": [
-                "commonlibsse-ng",
+                "commonlibsse-gg",
                 "detours",
+                {
+                    "name": "directxmath",
+                    "version>=": "2025-04-03"
+                },
+                {
+                    "name": "directxtk",
+                    "version>=": "2025-10-27"
+                },
+                "openvr",                 
                 "boost-algorithm",
                 "boost-math",
                 "boost-lexical-cast",
-                "boost-property-tree"
+                "boost-property-tree",
+                {
+                    "name": "spdlog",
+                    "version>=": "1.16.0"
+                }
             ]
         },
         "tests": {
@@ -26,7 +39,11 @@
                         "plugin"
                     ]
                 },
-                "catch2"
+                "catch2",
+                {
+                    "name": "spdlog",
+                    "version>=": "1.16.0"
+                }
             ]
         }
     },

@@ -4,7 +4,7 @@ namespace DeviousDevices {
     namespace Utils {
         void ForEachReferenceInRange(
             RE::TESObjectREFR* origin, float radius,
-            std::function<RE::BSContainer::ForEachResult(RE::TESObjectREFR& ref)> callback);
+            std::function<RE::BSContainer::ForEachResult(RE::TESObjectREFR* ref)> callback);
 
 
         void ForEachActorInRange(float a_range,
