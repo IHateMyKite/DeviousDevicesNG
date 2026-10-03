@@ -107,6 +107,7 @@ Event OnUpdate()
         AddInventoryEventFilter(libs.SoulgemFilled)
         RegisterEvents()
         InitGagSpeak(true)
+        GoToState("")
         _initiated = true
     endif
 EndEvent
@@ -133,6 +134,7 @@ Event OnPlayerLoadGame()
     RegisterEvents()
     RegisterKeys()
     InitGagSpeak(false)
+    GoToState("")
 EndEvent
 
 Function CheckForSoftDepends()
@@ -143,7 +145,13 @@ Function CheckForSoftDepends()
 		libs.Error("DDNG: 'DD_Animation_Overhaul_by_Taki17' ESP is active. This ESP is from and old version and no longer required will cause issues. Remove the ESP from your mod manager.")
 	EndIf
 EndFunction
- 
+
+; It's possible for items to be removed when starting a new game before OnInit has added the filter
+Auto State INIT
+    Event OnItemRemoved(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akDestContainer)
+    EndEvent
+EndState
+
 Event OnItemRemoved(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akDestContainer)
     ; Replace with base item.
     If akItemReference != None && akDestContainer == None  ; Dropped
