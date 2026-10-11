@@ -942,9 +942,9 @@ Bool Function StartValidDDAnimation(Actor[] SexActors, bool forceaggressive = fa
 	EndIf
 	;Utility.Wait(1)	; try to keep SexLab from hiccuping.
 	SkipFilter = True
-	SexLab.StartSex(Positions = SexActors, anims = Sanims, victim = victim, allowbed = allowbed, hook = hook) 		
+	Int tid = SexLab.StartSex(Positions = SexActors, anims = Sanims, victim = victim, allowbed = allowbed, hook = hook) 		
 	Mutex = False
-	Return True
+	Return tid != -1
 EndFunction
 
 Function Logic(int threadID, bool HasPlayer)	
