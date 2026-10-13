@@ -12,32 +12,110 @@ Bool blinded
 float lastBlindfoldStrength = 0.0
 int lastdarkfogStrength = 0
 int lastBlindfoldMode = -1
+float lastTintStrength = -1.0
+ImageSpaceModifier splitBlur
+ImageSpaceModifier splitTint
+
+Function ClearSplitEffects()
+    if splitBlur
+        splitBlur.Remove()
+    endif
+    if splitTint
+        splitTint.Remove()
+    endif
+EndFunction
+
+Function ClearFog()
+    if Weather.GetSkyMode() == 0
+        zadNativeFunctions.ExecuteConsoleCmd("ts")
+    endif
+    zadNativeFunctions.ExecuteConsoleCmd("setfog 0 0")
+EndFunction
 
 Function ApplyBlindfold()
-    if !(blinded && libs.config.BlindfoldMode == lastBlindfoldMode && libs.config.BlindfoldStrength == lastBlindfoldStrength && libs.config.darkfogStrength == lastdarkfogStrength)
-        lastBlindfoldMode = libs.config.BlindfoldMode
-        if libs.config.BlindfoldMode == 3 ;dark fog
-            if Weather.GetSkyMode() != 0
-              zadNativeFunctions.ExecuteConsoleCmd("ts")
-              Utility.Wait(0.1)
+    if Terminate
+        return
+    endif
+    libs.config.InitializeBlindfoldTint()
+    float tintStrength = libs.config.blindfoldTintStrength
+    if tintStrength < 0.0
+        tintStrength = 0.0
+    elseif tintStrength > 1.0
+        tintStrength = 1.0
+    endif
+    int mode = libs.config.BlindfoldMode
+    float strength = libs.config.BlindfoldStrength
+    if strength < 0.0
+        strength = 0.0
+    elseif strength > 5.0
+        strength = 5.0
+    endif
+    if mode == 0 && strength > 1.0
+        strength = 1.0
+    endif
+    if blinded && tintStrength == lastTintStrength && mode == lastBlindfoldMode && strength == lastBlindfoldStrength && libs.config.darkfogStrength == lastdarkfogStrength
+        return
+    endif
+    ClearSplitEffects()
+    ; Mode changes must remove the previous modifier, including switching to pure fog.
+    zad_BlindfoldLeeches.Remove()
+    zad_BlindfoldModifier.Remove()
+    if (lastBlindfoldMode == 3 || lastBlindfoldMode == 4) && mode != 3 && mode != 4
+        ClearFog()
+    endif
+    if mode == 3 || mode == 4
+        if Weather.GetSkyMode() != 0
+            zadNativeFunctions.ExecuteConsoleCmd("ts")
+            Utility.Wait(0.1)
+        endif
+        ; Do not reapply fog after removal or another mode change during the latent wait.
+        if Terminate || libs.config.BlindfoldMode != mode
+            if Terminate || (libs.config.BlindfoldMode != 3 && libs.config.BlindfoldMode != 4)
+                ClearFog()
             endif
-            zadNativeFunctions.ExecuteConsoleCmd("setfog " + 1 + " " + libs.config.darkfogStrength)
-            lastdarkfogStrength = libs.config.darkfogStrength
-        EndIf        
-        if libs.config.BlindfoldStrength != lastBlindfoldStrength
-            zad_BlindfoldLeeches.Remove()
-            zad_BlindfoldModifier.Remove()
-        EndIf
-        lastBlindfoldStrength = libs.config.BlindfoldStrength
-        if libs.config.BlindfoldMode == 2  || libs.config.BlindfoldMode == 1;Leeches Mode
-            zad_BlindfoldModifier.Remove()
-            zad_BlindfoldLeeches.Apply(libs.config.blindfoldStrength)
-        ElseIf libs.config.BlindfoldMode == 0
-            zad_BlindfoldLeeches.Remove()
-            zad_BlindfoldModifier.Apply(libs.config.BlindfoldStrength)
-        EndIf
-        blinded = true
-    EndIf
+            return
+        endif
+        zadNativeFunctions.ExecuteConsoleCmd("setfog 1 " + libs.config.darkfogStrength)
+    endif
+    if mode != 3
+        if mode == 0
+            splitBlur = zad_BlindfoldModifier
+            splitTint = Game.GetFormFromFile(0xA200E0, "Devious Devices - Integration.esm") as ImageSpaceModifier
+        else
+            splitBlur = zad_BlindfoldLeeches
+            if strength > 1.0
+                int step = (((strength - 1.0) * 10.0) + 0.5) as Int
+                if step < 1
+                    step = 1
+                elseif step > 40
+                    step = 40
+                endif
+                ; Extended profiles occupy 0xA200E1 through 0xA20108 in Integration.
+                splitBlur = Game.GetFormFromFile(0xA200E0 + step, "Devious Devices - Integration.esm") as ImageSpaceModifier
+            endif
+            splitTint = Game.GetFormFromFile(0xA200DF, "Devious Devices - Integration.esm") as ImageSpaceModifier
+        endif
+        if splitBlur && splitTint
+            if strength > 0.0
+                if strength > 1.0
+                    ; Native blend stays in range; the selected record adds blur radius.
+                    splitBlur.Apply(1.0)
+                else
+                    splitBlur.Apply(strength)
+                endif
+            endif
+            if tintStrength > 0.0
+                splitTint.Apply(tintStrength)
+            endif
+        else
+            libs.Log("Blindfold effect records are missing from Devious Devices - Integration.esm; update the plugin and scripts together.")
+        endif
+    endif
+    lastTintStrength = tintStrength
+    lastBlindfoldMode = mode
+    lastBlindfoldStrength = strength
+    lastdarkfogStrength = libs.config.darkfogStrength
+    blinded = true
 EndFunction
 
 Event UpdateEvent(string eventName, string strArg, float numArg, Form sender)
@@ -46,12 +124,13 @@ EndEvent
 
 Event OnPlayerCameraState(int oldState, int newState)
     if newState != -1 ; Do not process map state changes
-        if libs.config.blindfoldMode == 2 || libs.config.blindfoldMode == 3 ; Leeches or Dark fog Mode    
+        if libs.config.blindfoldMode == 2 || libs.config.blindfoldMode == 3 || libs.config.blindfoldMode == 4 ; Leeches, fog or combined
             ApplyBlindfold()
             libs.UpdateControls()
         Else
             if newState == 3 || newState == 8 || newState == 9 ; Free, Third person 1, Third person 2
                 ;Input.TapKey(Input.GetMappedKey("Forward"))
+                ClearSplitEffects()
                 blinded = false
                 zad_BlindfoldModifier.Remove()
                 zad_BlindfoldLeeches.Remove()
@@ -65,14 +144,8 @@ EndEvent
 
 Event OnPlayerLoadGame()
     Utility.wait(1.0)
-    if libs.config.BlindfoldMode == 3 ;dark fog
-        if Weather.GetSkyMode() != 0
-          zadNativeFunctions.ExecuteConsoleCmd("ts")
-          Utility.Wait(0.1)
-        endif
-        zadNativeFunctions.ExecuteConsoleCmd("setfog " + 1 + " " + libs.config.darkfogStrength)
-        lastdarkfogStrength = libs.config.darkfogStrength
-    EndIf
+    blinded = false
+    ApplyBlindfold()
 EndEvent
 
 Event OnUpdate()
@@ -114,8 +187,9 @@ EndEvent
 Event OnEffectFinish(Actor akTarget, Actor akCaster)
     libs.Log("OnEffectFinish(blindfold)")
     Terminate = True
+    ClearSplitEffects()
     if target == libs.PlayerRef
-        if (libs.config.BlindfoldMode == 3) ;dark fog
+        if libs.config.BlindfoldMode == 3 || libs.config.BlindfoldMode == 4 || lastBlindfoldMode == 3 || lastBlindfoldMode == 4 ; Either fog mode
             if Weather.GetSkyMode() == 0
             zadNativeFunctions.ExecuteConsoleCmd("ts")
             endif
