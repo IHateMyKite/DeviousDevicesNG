@@ -48,8 +48,9 @@ Bool Property breastNodeManagement = False Auto Hidden
 Bool Property bellyNodeManagement = False Auto Hidden
 
 ;Restraints
-Int Property blindfoldMode = 2 Auto Hidden ; 0 == DD's mode, 1 == DD's mode w/ leeches, 2 == leeches
+Int Property blindfoldMode = 2 Auto Hidden ; 0 DD, 1 DD with leeches, 2 leeches, 3 dark fog, 4 leeches + dark fog
 Float Property blindfoldStrength = 0.5 Auto Hidden
+Float Property blindfoldTintStrength = -1.0 Auto Hidden
 Int Property darkfogStrength = 500 Auto Hidden
 Bool Property BlindfoldTooltip = True Auto Hidden
 
@@ -116,12 +117,19 @@ String[] hiderSetting
 String[] SoundList
 Int[] SlotMaskValues
 
+Function InitializeBlindfoldTint()
+    If blindfoldTintStrength < 0.0
+        blindfoldTintStrength = blindfoldStrength
+    EndIf
+EndFunction
+
 Function SetupBlindfolds()
-	blindfoldList = new String[4]
+	blindfoldList = new String[5]
 	blindfoldList[0] = "DD Blindfold"
 	blindfoldList[1] = "DD Blindfold with Leeches Effect"
 	blindfoldList[2] = "Leeches Mode"
-	blindfoldList[3] = "Dark Fog" 
+	blindfoldList[3] = "Dark Fog"
+	blindfoldList[4] = "Leeches + Dark Fog"
 EndFunction
 
 Function SetupSoundDuration()
@@ -235,6 +243,9 @@ Event OnVersionUpdate(Int newVersion)
 EndEvent
 
 Event OnPageReset(String page)
+    InitializeBlindfoldTint()
+	; Refresh the extended list on existing saves without changing DD's config version.
+	SetupBlindfolds()
 	If (page == "")
 		LoadCustomContent("DeviousIntegrationTitle.dds", 100, 0)
 		Return
@@ -289,13 +300,17 @@ Event OnPageReset(String page)
 		AddEmptyOption()
 		AddToggleOptionST("BlindfoldBlockMapUseST", "Blindfolds Block Map Use", BlindfoldBlockMapUse)
 		AddMenuOptionST("BlindfoldModeST", "Blindfold Mode", blindfoldList[blindfoldMode])
-		If blindfoldMode < 3 ;all except dark fog
-			AddSliderOptionST("BlindfoldStrengthST", "Blindfold Effect Strength", blindfoldStrength, "{2}")
-			AddSliderOptionST("DarkFogStrengthST", "Dark Fog Effect Strength", darkfogStrength, "{0}", OPTION_FLAG_DISABLED)
-		Else
-			AddSliderOptionST("BlindfoldStrengthST", "Blindfold Effect Strength", blindfoldStrength, "{2}", OPTION_FLAG_DISABLED)
-			AddSliderOptionST("DarkFogStrengthST", "Dark Fog Effect Strength", darkfogStrength, "{0}")
-		EndIf
+		Int blurFlags = OPTION_FLAG_NONE
+        Int fogFlags = OPTION_FLAG_NONE
+        If blindfoldMode == 3
+            blurFlags = OPTION_FLAG_DISABLED
+        EndIf
+        If blindfoldMode != 3 && blindfoldMode != 4
+            fogFlags = OPTION_FLAG_DISABLED
+        EndIf
+        AddSliderOptionST("BlindfoldStrengthST", "Blindfold Blur Strength", blindfoldStrength, "{2}", blurFlags)
+        AddSliderOptionST("BlindfoldTintStrengthST", "Blindfold Tint Strength", blindfoldTintStrength, "{2}", blurFlags)
+        AddSliderOptionST("DarkFogStrengthST", "Dark Fog Effect Strength", darkfogStrength, "{0}", fogFlags)
 
 		AddHeaderOption("Sound Options")
 		AddSliderOptionST("OrgasmVolST", "Orgasm Volume", VolumeOrgasm, "{3}")
@@ -777,7 +792,11 @@ State BlindfoldStrengthST
 	Event OnSliderOpenST()
 		SetSliderDialogStartValue(blindfoldStrength)
 		SetSliderDialogDefaultValue(0.5)
-		SetSliderDialogRange(0.0, 1.0)
+		If blindfoldMode == 0
+            SetSliderDialogRange(0.0, 1.0)
+        Else
+            SetSliderDialogRange(0.0, 5.0)
+        EndIf
 		SetSliderDialogInterval(0.1)
 	EndEvent
 	Event OnSliderAcceptST(Float value)
@@ -791,8 +810,31 @@ State BlindfoldStrengthST
 		SendModEvent("zadBlindfoldEffectUpdate")
 	EndEvent
 	Event OnHighlightST()
-		SetInfoText("Set the strength of the blindfold's vision-limiting effect.")
+		SetInfoText("Adjust the strength of the blindfold's blurring effect.")
 	EndEvent
+EndState
+
+State BlindfoldTintStrengthST
+    Event OnSliderOpenST()
+        InitializeBlindfoldTint()
+        SetSliderDialogStartValue(blindfoldTintStrength)
+        SetSliderDialogDefaultValue(0.5)
+        SetSliderDialogRange(0.0, 1.0)
+        SetSliderDialogInterval(0.05)
+    EndEvent
+    Event OnSliderAcceptST(Float value)
+        blindfoldTintStrength = value
+        SetSliderOptionValueST(blindfoldTintStrength, "{2}")
+        SendModEvent("zadBlindfoldEffectUpdate")
+    EndEvent
+    Event OnDefaultST()
+        blindfoldTintStrength = 0.5
+        SetSliderOptionValueST(blindfoldTintStrength, "{2}")
+        SendModEvent("zadBlindfoldEffectUpdate")
+    EndEvent
+    Event OnHighlightST()
+        SetInfoText("Adjust the strength of the blindfold's darkening effect.")
+    EndEvent
 EndState
 
 State DarkFogStrengthST
@@ -1171,25 +1213,32 @@ EndState
 
 State BlindfoldModeST
 	Event OnMenuOpenST()
+		SetupBlindfolds()
 		SetMenuDialogStartIndex(blindfoldMode)
 		SetMenuDialogDefaultIndex(2)
 		SetMenuDialogOptions(blindfoldList)
 	EndEvent
 	Event OnMenuAcceptST(Int index)
-		If blindfoldMode == 3 && index != 3 ;Old mode was Dark Fog, remove it
+		If index < 0 || index > 4
+			Return
+		EndIf
+		If (blindfoldMode == 3 || blindfoldMode == 4) && index != 3 && index != 4 ; Leaving either fog mode
 			If Weather.GetSkyMode() == 0
 				zadNativeFunctions.ExecuteConsoleCmd("ts")
 			EndIf
 			zadNativeFunctions.ExecuteConsoleCmd("setfog 0 0")
 		EndIf
 		blindfoldMode = index
+		If blindfoldMode == 0 && blindfoldStrength > 1.0
+			blindfoldStrength = 1.0
+		EndIf
 		SetMenuOptionValueST(blindfoldList[index])
 		ForcePageReset()
 		libs.UpdateControls()
 		SendModEvent("zadBlindfoldEffectUpdate")
 	EndEvent
 	Event OnDefaultST()
-		If blindfoldMode == 3 ;Old mode was Dark Fog, remove it
+		If blindfoldMode == 3 || blindfoldMode == 4 ; Leaving either fog mode
 			If Weather.GetSkyMode() == 0
 				zadNativeFunctions.ExecuteConsoleCmd("ts")
 			EndIf
@@ -1589,7 +1638,9 @@ Function ExportSettings()
 
 	;EXPORT FLOAT
 	ExportFloat("BeltRateMult", BeltRateMult)
+	InitializeBlindfoldTint()
 	ExportFloat("blindfoldStrength", blindfoldStrength)
+	ExportFloat("blindfoldTintStrength", blindfoldTintStrength)
 	ExportFloat("EventInterval", EventInterval)
 	ExportFloat("MinigameCriticalFailChance", MinigameCriticalFailChance)
 	ExportFloat("MinigameEscalationChance", MinigameEscalationChance)
@@ -1621,7 +1672,7 @@ Function ImportSettings()
 	;IMPORT INT
 	Int oldBlindfoldMode = BlindfoldMode
 	blindfoldMode = ImportInt("blindfoldMode", blindfoldMode)
-	If oldBlindfoldMode == 3 && BlindfoldMode != 3 ; Old mode was Dark Fog, remove it
+	If (oldBlindfoldMode == 3 || oldBlindfoldMode == 4) && BlindfoldMode != 3 && BlindfoldMode != 4 ; Leaving either fog mode
 		If Weather.GetSkyMode() == 0
 			zadNativeFunctions.ExecuteConsoleCmd("ts")
 		Endif
@@ -1668,6 +1719,8 @@ Function ImportSettings()
 	;IMPORT FLOAT
 	BeltRateMult = ImportFloat("BeltRateMult", BeltRateMult)
 	blindfoldStrength = ImportFloat("blindfoldStrength", blindfoldStrength)
+	InitializeBlindfoldTint()
+	blindfoldTintStrength = ImportFloat("blindfoldTintStrength", blindfoldTintStrength)
 	EventInterval = ImportFloat("EventInterval", EventInterval)
 	MinigameCriticalFailChance = ImportFloat("MinigameCriticalFailChance", MinigameCriticalFailChance)
 	MinigameEscalationChance = ImportFloat("MinigameEscalationChance", MinigameEscalationChance)
@@ -1681,6 +1734,7 @@ Function ImportSettings()
 	VolumeVibrator = ImportFloat("VolumeVibrator", VolumeVibrator)
 	VolumeVibratorNPC = ImportFloat("VolumeVibratorNPC", VolumeVibratorNPC)
 
+	SendModEvent("zadBlindfoldEffectUpdate")
 	ForcePageReset()
 	ShowMessage( "Configuration imported successfully.", False )
 EndFunction
