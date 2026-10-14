@@ -13,6 +13,8 @@ float lastBlindfoldStrength = 0.0
 int lastdarkfogStrength = 0
 int lastBlindfoldMode = -1
 float lastTintStrength = -1.0
+Bool fogLightingActive = False
+Bool restoreVolumetricLighting = False
 ImageSpaceModifier splitBlur
 ImageSpaceModifier splitTint
 
@@ -22,6 +24,33 @@ Function ClearSplitEffects()
     endif
     if splitTint
         splitTint.Remove()
+    endif
+EndFunction
+
+Function ReleaseFogVolumetricLighting()
+    if fogLightingActive
+        fogLightingActive = False
+        ; Restore only lighting this effect disabled; keep a manual enabled state.
+        if restoreVolumetricLighting && !Utility.GetINIBool("bVolumetricLightingEnable:Display")
+            zadNativeFunctions.ExecuteConsoleCmd("tvl")
+        endif
+        restoreVolumetricLighting = False
+    endif
+EndFunction
+
+Function UpdateFogVolumetricLighting(Int mode)
+    if mode != 3 && mode != 4
+        ReleaseFogVolumetricLighting()
+        return
+    endif
+    ; Entering fog disables godrays once. Camera/slider updates must not undo
+    ; subsequent manual TVL commands, including switching between fog modes.
+    if !fogLightingActive
+        fogLightingActive = True
+        restoreVolumetricLighting = Utility.GetINIBool("bVolumetricLightingEnable:Display")
+        if restoreVolumetricLighting
+            zadNativeFunctions.ExecuteConsoleCmd("tvl")
+        endif
     endif
 EndFunction
 
@@ -44,6 +73,7 @@ Function ApplyBlindfold()
         tintStrength = 1.0
     endif
     int mode = libs.config.BlindfoldMode
+    UpdateFogVolumetricLighting(mode)
     float strength = libs.config.BlindfoldStrength
     if strength < 0.0
         strength = 0.0
@@ -143,6 +173,9 @@ Event OnPlayerCameraState(int oldState, int newState)
 EndEvent
 
 Event OnPlayerLoadGame()
+    ; Console lighting state is initialized again when Skyrim starts.
+    fogLightingActive = False
+    restoreVolumetricLighting = False
     Utility.wait(1.0)
     blinded = false
     ApplyBlindfold()
@@ -187,6 +220,7 @@ EndEvent
 Event OnEffectFinish(Actor akTarget, Actor akCaster)
     libs.Log("OnEffectFinish(blindfold)")
     Terminate = True
+    ReleaseFogVolumetricLighting()
     ClearSplitEffects()
     if target == libs.PlayerRef
         if libs.config.BlindfoldMode == 3 || libs.config.BlindfoldMode == 4 || lastBlindfoldMode == 3 || lastBlindfoldMode == 4 ; Either fog mode
