@@ -269,6 +269,148 @@ namespace DeviousDevices {
         }
     }
 
+
+    std::unordered_map<RE::FormID, RE::BSFixedString> sl_tag_overrides;
+    bool SetActorSLTagOverride(RE::StaticFunctionTag* base, RE::TESForm* obj, RE::BSFixedString tag) {
+        if (!obj) {
+            return false;
+        }
+
+        if (auto actor = obj->As<RE::Actor>()) {
+            if (tag == "") {
+                if (sl_tag_overrides.contains(actor->formID)) {
+                    sl_tag_overrides.erase(actor->formID);
+                }
+                return true;
+            } else {
+                sl_tag_overrides.insert_or_assign(actor->formID, tag);
+                return true;
+            }
+        }
+        return false;
+    }
+    RE::BSFixedString GetActorSLTagOverride(RE::StaticFunctionTag* base, RE::TESForm* obj) {
+        if (!obj) {
+            return "";
+        }
+        if (auto actor = obj->As<RE::Actor>()) {
+            if (sl_tag_overrides.contains(actor->formID)) {
+                return sl_tag_overrides[actor->formID];
+            }
+        }
+        return "";
+    }
+    
+    
+    template <typename T>
+    static bool override_args(RE::BSFixedString& function, T& variables) {
+        if (function == RE::BSFixedString("LookupScenes")) {
+            if (variables.size() > 2) {
+                if (variables[1].IsString()) {
+                    if (variables[0].IsObjectArray()) {
+                        auto akPositions = variables[0].GetArray();
+                        if (akPositions && akPositions->size() >= 1) {
+                            for (auto& actor_var : *akPositions) {
+                                if (actor_var.IsObject()) {
+                                    auto actor_obj = actor_var.GetObject();
+                                    auto actor_formID = (actor_obj->GetHandle() & 0xFFFFFFFF);
+                                    if (sl_tag_overrides.contains(actor_formID)) {
+                                        variables[1].SetString(sl_tag_overrides[actor_formID]);
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (function == RE::BSFixedString("LookupScenesA")) {
+            if (variables.size() > 2) {
+                if (variables[1].IsString()) {
+                    if (variables[0].IsObjectArray()) {
+                        auto akPositions = variables[0].GetArray();
+                        if (akPositions && akPositions->size() >= 1) {
+                            for (auto& actor_var : *akPositions) {
+                                if (actor_var.IsObject()) {
+                                    auto actor_obj = actor_var.GetObject();
+                                    auto actor_formID = (actor_obj->GetHandle() & 0xFFFFFFFF);
+                                    if (sl_tag_overrides.contains(actor_formID)) {
+                                        variables[1].SetString(sl_tag_overrides[actor_formID]);
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (function == RE::BSFixedString("StartSceneA")) {
+            if (variables.size() > 2) {
+                if (variables[1].IsString()) {
+                    if (variables[0].IsObjectArray()) {
+                        auto akPositions = variables[0].GetArray();
+                        if (akPositions && akPositions->size() >= 1) {
+                            for (auto& actor_var : *akPositions) {
+                                if (actor_var.IsObject()) {
+                                    auto actor_obj = actor_var.GetObject();
+                                    auto actor_formID = (actor_obj->GetHandle() & 0xFFFFFFFF);
+                                    if (sl_tag_overrides.contains(actor_formID)) {
+                                        variables[1].SetString(sl_tag_overrides[actor_formID]);
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (function == RE::BSFixedString("StartScene")) {
+            if (variables.size() > 2) {
+                if (variables[1].IsString()) {
+                    if (variables[0].IsObjectArray()) {
+                        auto akPositions = variables[0].GetArray();
+                        if (akPositions && akPositions->size() >= 1) {
+                            for (auto& actor_var : *akPositions) {
+                                if (actor_var.IsObject()) {
+                                    auto actor_obj = actor_var.GetObject();
+                                    auto actor_formID = (actor_obj->GetHandle() & 0xFFFFFFFF);
+                                    if (sl_tag_overrides.contains(actor_formID)) {
+                                        variables[1].SetString(sl_tag_overrides[actor_formID]);
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+        }
+        return false;
+    }
+    auto GetFuncCallInfo =
+        (bool (*)(void*t, RE::BSScript::Internal::CodeTasklet::CallType& a_callType,
+                  RE::BSTSmartPointer<RE::BSScript::ObjectTypeInfo>& a_arg2, RE::BSFixedString& a_arg3,
+                  RE::BSScript::Variable& a_arg4, RE::BSScrapArray<RE::BSScript::Variable>& a_arg5)) nullptr;
+    static bool GetFuncCallInfoHook(void* t,RE::BSScript::Internal::CodeTasklet::CallType& a_callType,
+        RE::BSTSmartPointer<RE::BSScript::ObjectTypeInfo>& a_arg2, RE::BSFixedString& a_arg3, RE::BSScript::Variable& a_arg4,
+        RE::BSScrapArray<RE::BSScript::Variable>& a_arg5) {
+        bool retval=GetFuncCallInfo(t, a_callType, a_arg2, a_arg3, a_arg4, a_arg5);
+        if (a_arg2) {
+            if (a_arg2->name == RE::BSFixedString("SexLabFramework") ||
+                a_arg2->name == RE::BSFixedString("SexLabRegistry")) {
+                auto& function = a_arg3;
+                auto& variables = a_arg5;
+                override_args<RE::BSScrapArray<RE::BSScript::Variable>>(function, variables);
+            }
+        }
+        
+        return retval;
+    }
+    
 }
 
 bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
@@ -281,6 +423,9 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     #endif
 
     //Papyrus.h
+    REGISTERPAPYRUSFUNC(SetActorSLTagOverride,false);
+    REGISTERPAPYRUSFUNC(GetActorSLTagOverride,false);
+
     REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyType, false);
     REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyInt, false);
     REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyFloat, false);
@@ -336,7 +481,12 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     REGISTERPAPYRUSFUNC(GetWornDevice, true);
     REGISTERPAPYRUSFUNC(PluginInstalled, true);
     REGISTERPAPYRUSFUNC(ExecuteConsoleCmd, false);
+    GetFuncCallInfo = (bool (*)(void* t, RE::BSScript::Internal::CodeTasklet::CallType& a_callType,
+                                RE::BSTSmartPointer<RE::BSScript::ObjectTypeInfo>& a_arg2, RE::BSFixedString& a_arg3,
+                                RE::BSScript::Variable& a_arg4, RE::BSScrapArray<RE::BSScript::Variable>& a_arg5))
+        REL::Relocation(RE::VTABLE_BSScript__Internal__CodeTasklet[0].address()).write_vfunc(1, GetFuncCallInfoHook);
 
+    
     #undef REGISTERPAPYRUSFUNC
     return true;
 }
