@@ -269,6 +269,118 @@ namespace DeviousDevices {
         }
     }
 
+
+    std::unordered_map<RE::FormID, RE::BSFixedString> sl_tag_overrides;
+    bool SetActorSLTagOverride(RE::StaticFunctionTag* base, RE::TESForm* obj, RE::BSFixedString tag) {
+        if (!obj) {
+            return false;
+        }
+
+        if (auto actor = obj->As<RE::Actor>()) {
+            if (tag == "") {
+                if (sl_tag_overrides.contains(actor->formID)) {
+                    sl_tag_overrides.erase(actor->formID);
+                }
+                return true;
+            } else {
+                sl_tag_overrides.insert_or_assign(actor->formID, tag);
+                return true;
+            }
+        }
+        return false;
+    }
+    RE::BSFixedString GetActorSLTagOverride(RE::StaticFunctionTag* base, RE::TESForm* obj) {
+        if (!obj) {
+            return "";
+        }
+        if (auto actor = obj->As<RE::Actor>()) {
+            if (sl_tag_overrides.contains(actor->formID)) {
+                return sl_tag_overrides[actor->formID];
+            }
+        }
+        return "";
+    }
+    auto PapyrusFuncCall = (uint64_t (*)(void*, void*, void*, bool)) nullptr;
+    static uint64_t PapyrusCallHook(void* arg1, void* arg2, void* arg3, bool arg4) {
+        if (arg3) {
+            auto tasklet = (RE::BSTSmartPointer<RE::BSScript::Internal::CodeTasklet>*) arg3;
+            RE::BSScript::Internal::CodeTasklet::CallType type;
+            RE::BSTSmartPointer<RE::BSScript::ObjectTypeInfo> info;
+            RE::BSFixedString function;
+            RE::BSScript::Variable variable;
+            RE::BSScrapArray<RE::BSScript::Variable> variables;
+            if (tasklet && tasklet->get()) {
+                tasklet->get()->GetFunctionCallInfo(type, info, function, variable, variables);
+                if (info && info->name == RE::BSFixedString("SexlabRegistry") && tasklet->get()->vm) {
+                    if (function == RE::BSFixedString("LookupScenes")) {
+                        if (variables.size() > 2) {
+                            if (variables[1].IsString()) {
+                                if (variables[0].IsObjectArray()) {
+                                    auto akPositions = variables[0].GetArray();
+                                    if (akPositions && akPositions->size() >= 1) {
+                                        for (auto& actor_var : *akPositions) {
+                                            if (actor_var.IsObject()) {
+                                                auto actor_obj = actor_var.GetObject();
+                                                auto actor_formID = (actor_obj->GetHandle() & 0xFFFFFFFF);
+                                                if (sl_tag_overrides.contains(actor_formID)) {
+                                                    variables[1].SetString(sl_tag_overrides[actor_formID]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                    
+                            }
+                        }
+                    }
+                    if (function == RE::BSFixedString("LookupScenesA")) {
+                        if (variables.size() > 2) {
+                            if (variables[1].IsString()) {
+                                if (variables[0].IsObjectArray()) {
+                                    auto akPositions = variables[0].GetArray();
+                                    if (akPositions && akPositions->size() >= 1) {
+                                        for (auto& actor_var: *akPositions) {
+                                            if (actor_var.IsObject()) {
+                                                auto actor_obj = actor_var.GetObject();
+                                                auto actor_formID = (actor_obj->GetHandle() & 0xFFFFFFFF);
+                                                if (sl_tag_overrides.contains(actor_formID)) {
+                                                    variables[1].SetString(sl_tag_overrides[actor_formID]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (function == RE::BSFixedString("StartScene")) {
+                        if (variables.size() > 2) {
+                            if (variables[1].IsString()) {
+                                if (variables[0].IsObjectArray()) {
+                                    auto akPositions = variables[0].GetArray();
+                                    if (akPositions && akPositions->size() >= 1) {
+                                        for (auto& actor_var: *akPositions) {
+                                            if (actor_var.IsObject()) {
+                                                auto actor_obj = actor_var.GetObject();
+                                                auto actor_formID = (actor_obj->GetHandle() & 0xFFFFFFFF);
+                                                if (sl_tag_overrides.contains(actor_formID)) {
+                                                    variables[1].SetString(sl_tag_overrides[actor_formID]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //tasklet->get()->vm->TraceStack(std::format("{}.{}", info->name.c_str(), function.c_str()).c_str(),
+                    //tasklet->get()->stack->stackID);
+                }
+            }
+        }
+        return PapyrusFuncCall(arg1,arg2,arg3,arg4);
+    }
 }
 
 bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
@@ -281,6 +393,9 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     #endif
 
     //Papyrus.h
+    REGISTERPAPYRUSFUNC(SetActorSLTagOverride,false);
+    REGISTERPAPYRUSFUNC(GetActorSLTagOverride,false);
+
     REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyType, false);
     REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyInt, false);
     REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyFloat, false);
@@ -336,7 +451,14 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     REGISTERPAPYRUSFUNC(GetWornDevice, true);
     REGISTERPAPYRUSFUNC(PluginInstalled, true);
     REGISTERPAPYRUSFUNC(ExecuteConsoleCmd, false);
-
+    
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)DeviousDevices::PapyrusFuncCall, PapyrusCallHook);
+    if (DetourTransactionCommit() != NO_ERROR)
+    {
+        ERROR("Failed to install SL Tags Papyrus VM Hook");
+    }
     #undef REGISTERPAPYRUSFUNC
     return true;
 }

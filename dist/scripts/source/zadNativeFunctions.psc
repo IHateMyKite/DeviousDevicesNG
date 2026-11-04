@@ -1,5 +1,13 @@
 scriptName zadNativeFunctions Hidden
 
+
+; === Animation Filter Functions
+
+Bool    Function SetActorSLTagOverride (Actor akActor, String asTags) global native
+String    Function GetActorSLTagOverride (Actor akActor) global native
+
+; === Inventory Script Access Functions
+
 Form Function GetInventoryObjectPropertyObject(Actor a_actor, Armor a_armor, string script, string p) global native
 string Function GetInventoryObjectPropertyString(Actor a_actor, Armor a_armor, string script, string p) global native
 int Function GetInventoryObjectPropertyInt(Actor a_actor, Armor a_armor, string script, string p) global native
@@ -69,6 +77,9 @@ Int[]       Function GetPropertyIntArray    (Armor akInvDevice, String asPropert
 Float[]     Function GetPropertyFloatArray  (Armor akInvDevice, String asPropertyName, Int aiMode = 0)  global native
 Bool[]      Function GetPropertyBoolArray   (Armor akInvDevice, String asPropertyName, Int aiMode = 0)  global native
 String[]    Function GetPropertyStringArray (Armor akInvDevice, String asPropertyName, Int aiMode = 0)  global native
+
+
+
 
 ; === equip rework
         Function SetManipulated (Actor akActor, Armor akInvDevice, bool abManip)    global native
