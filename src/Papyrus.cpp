@@ -399,11 +399,15 @@ namespace DeviousDevices {
         RE::BSTSmartPointer<RE::BSScript::ObjectTypeInfo>& a_arg2, RE::BSFixedString& a_arg3, RE::BSScript::Variable& a_arg4,
         RE::BSScrapArray<RE::BSScript::Variable>& a_arg5) {
         bool retval=GetFuncCallInfo(t, a_callType, a_arg2, a_arg3, a_arg4, a_arg5);
-        if (a_arg3 == RE::BSFixedString("SexLabFramework") || a_arg3 == RE::BSFixedString("SexLabRegistry")) {
-            auto& function = a_arg3;
-            auto& variables = a_arg5;
-            override_args<RE::BSScrapArray<RE::BSScript::Variable>>(function, variables);
+        if (a_arg2) {
+            if (a_arg2->name == RE::BSFixedString("SexLabFramework") ||
+                a_arg2->name == RE::BSFixedString("SexLabRegistry")) {
+                auto& function = a_arg3;
+                auto& variables = a_arg5;
+                override_args<RE::BSScrapArray<RE::BSScript::Variable>>(function, variables);
+            }
         }
+        
         return retval;
     }
     
