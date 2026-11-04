@@ -1,10 +1,9 @@
 scriptName zadNativeFunctions Hidden
 
-
 ; === Animation Filter Functions
 
-Bool    Function SetActorSLTagOverride (Actor akActor, String asTags) global native
-String    Function GetActorSLTagOverride (Actor akActor) global native
+Bool    Function SetActorSLTagOverride (Form akActor, String asTags) global native
+String    Function GetActorSLTagOverride (Form akActor) global native
 
 ; === Inventory Script Access Functions
 
