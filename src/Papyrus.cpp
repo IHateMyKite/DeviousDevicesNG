@@ -451,7 +451,7 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     REGISTERPAPYRUSFUNC(GetWornDevice, true);
     REGISTERPAPYRUSFUNC(PluginInstalled, true);
     REGISTERPAPYRUSFUNC(ExecuteConsoleCmd, false);
-    
+    PapyrusFuncCall = (uint64_t (*)(void*, void*, void*, bool))REL::RelocationID(98130, 104853, 98130).address();
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)DeviousDevices::PapyrusFuncCall, PapyrusCallHook);
