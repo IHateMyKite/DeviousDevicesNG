@@ -307,13 +307,14 @@ namespace DeviousDevices {
                 if (RE::SkyrimVM::GetSingleton()->GetImpl()->FindBoundObject(
                         handle, s->GetProperty(property)->GetType().GetTypeInfo()->GetName(), object)) {
                     if (object->GetTypeInfo() == s->GetProperty(property)->GetType().GetTypeInfo()) {
+                        s->GetProperty(property)->SetObject(object);
                         return true;
                     }
                 }
             }
         }
         return false;
-    }    
+    }
     RE::TESForm* GetInventoryObjectPropertyObject(RE::StaticFunctionTag* base, RE::Actor* actor, RE::TESObjectARMO* armor,
                                              RE::BSFixedString script, RE::BSFixedString property) {
         if (auto s = GetInventoryObjectScript(actor, armor, script,property)) {
