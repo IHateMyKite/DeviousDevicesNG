@@ -294,6 +294,26 @@ namespace DeviousDevices {
         }
         return 0;
     }
+    bool SetInventoryObjectPropertyObject(RE::StaticFunctionTag* base, RE::Actor* actor, RE::TESObjectARMO* armor,
+                                   RE::BSFixedString script, RE::BSFixedString property, RE::TESForm* form) {
+        if (!form) {
+            return false;
+        }
+        if (auto s = GetInventoryObjectScript(actor, armor, script,property)) {
+            if (s->GetProperty(property)) {
+                auto handle =
+                    RE::SkyrimVM::GetSingleton()->GetImpl()->GetObjectHandlePolicy()->GetHandleForObject(form->GetFormType(), form);
+                RE::BSTSmartPointer<RE::BSScript::Object> object = nullptr;
+                if (RE::SkyrimVM::GetSingleton()->GetImpl()->FindBoundObject(
+                        handle, s->GetProperty(property)->GetType().GetTypeInfo()->GetName(), object)) {
+                    if (object->GetTypeInfo() == s->GetProperty(property)->GetType().GetTypeInfo()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }    
     RE::TESForm* GetInventoryObjectPropertyObject(RE::StaticFunctionTag* base, RE::Actor* actor, RE::TESObjectARMO* armor,
                                              RE::BSFixedString script, RE::BSFixedString property) {
         if (auto s = GetInventoryObjectScript(actor, armor, script,property)) {
