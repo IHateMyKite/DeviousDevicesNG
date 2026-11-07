@@ -5,10 +5,19 @@ string Function GetInventoryObjectPropertyString(Actor a_actor, Armor a_armor, s
 int Function GetInventoryObjectPropertyInt(Actor a_actor, Armor a_armor, string script, string p) global native
 float Function GetInventoryObjectPropertyFloat(Actor a_actor, Armor a_armor, string script, string p) global native
 bool Function GetInventoryObjectPropertyBool(Actor a_actor, Armor a_armor, string script, string p) global native
+string[] Function GetInventoryObjectPropertyStringArray(Actor a_actor, Armor a_armor, string script, string p) global native
+int[] Function GetInventoryObjectPropertyIntArray(Actor a_actor, Armor a_armor, string script, string p) global native
+float[] Function GetInventoryObjectPropertyFloatArray(Actor a_actor, Armor a_armor, string script, string p) global native
+bool[] Function GetInventoryObjectPropertyBoolArray(Actor a_actor, Armor a_armor, string script, string p) global native
 bool Function SetInventoryObjectPropertyInt(Actor a_actor, Armor a_armor, string script, string p, int value) global native
+bool Function SetInventoryObjectPropertyObject(Actor a_actor, Armor a_armor, string script, string p, Form value) global native
 bool Function SetInventoryObjectPropertyString(Actor a_actor, Armor a_armor, string script, string p, string value) global native
 bool Function SetInventoryObjectPropertyFloat(Actor a_actor, Armor a_armor, string script, string p,float value) global native
 bool Function SetInventoryObjectPropertyBool(Actor a_actor, Armor a_armor, string script, string p, bool value) global native
+bool Function SetInventoryObjectPropertyIntArray(Actor a_actor, Armor a_armor, string script, string p, int[] value) global native
+bool Function SetInventoryObjectPropertyStringArray(Actor a_actor, Armor a_armor, string script, string p, string[] value) global native
+bool Function SetInventoryObjectPropertyFloatArray(Actor a_actor, Armor a_armor, string script, string p,float[] value) global native
+bool Function SetInventoryObjectPropertyBoolArray(Actor a_actor, Armor a_armor, string script, string p, bool[] value) global native
 
 Form Function FindMatchingDevice(Actor akActor, Keyword kwd)  global native
 bool Function FormHasKeywordString(form theForm, string kwd)  global native
