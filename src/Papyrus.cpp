@@ -99,6 +99,160 @@ namespace DeviousDevices {
         }
         return false;
     }
+    bool SetInventoryObjectPropertyIntArray(RE::StaticFunctionTag *base, RE::Actor *actor, RE::TESObjectARMO *armor,
+                                            RE::BSFixedString script, RE::BSFixedString property, std::vector<int> input) {
+        if (input.size() >= 128) {
+            return false;
+        }
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kIntArray) {
+                    RE::BSTSmartPointer<RE::BSScript::Array> a;
+                    RE::SkyrimVM::GetSingleton()->GetImpl()->CreateArray(RE::BSScript::TypeInfo(RE::BSScript::TypeInfo::RawType::kInt),
+                                                                        input.size(), a);
+                    unsigned int i = 0;
+                    for (auto v : input) {
+                        a->data()[i].SetSInt(v);
+                    }
+                    s->GetProperty(property)->SetArray(a);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    bool SetInventoryObjectPropertyStringArray(RE::StaticFunctionTag *base, RE::Actor *actor, RE::TESObjectARMO *armor,
+                                            RE::BSFixedString script, RE::BSFixedString property, std::vector<RE::BSFixedString> input) {
+        if (input.size() >= 128) {
+            return false;
+        }
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kStringArray) {
+                    RE::BSTSmartPointer<RE::BSScript::Array> a;
+                    RE::SkyrimVM::GetSingleton()->GetImpl()->CreateArray(RE::BSScript::TypeInfo(RE::BSScript::TypeInfo::RawType::kString),
+                                                                        input.size(), a);
+                    unsigned int i = 0;
+                    for (auto v: input) {
+                        a->data()[i].SetString(v);
+                    }
+                    s->GetProperty(property)->SetArray(a);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    bool SetInventoryObjectPropertyFloatArray(RE::StaticFunctionTag *base, RE::Actor *actor, RE::TESObjectARMO *armor,
+                                            RE::BSFixedString script, RE::BSFixedString property, std::vector<float> input) {
+        if (input.size() >= 128) {
+            return false;
+        }
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kFloatArray) {
+                    RE::BSTSmartPointer<RE::BSScript::Array> a;
+                    RE::SkyrimVM::GetSingleton()->GetImpl()->CreateArray(RE::BSScript::TypeInfo(RE::BSScript::TypeInfo::RawType::kFloat),
+                                                                        input.size(), a);
+                    unsigned int i = 0;
+                    for (auto v: input) {
+                        a->data()[i].SetFloat(v);
+                    }
+                    s->GetProperty(property)->SetArray(a);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    bool SetInventoryObjectPropertyBoolArray(RE::StaticFunctionTag *base, RE::Actor *actor, RE::TESObjectARMO *armor,
+                                            RE::BSFixedString script, RE::BSFixedString property, std::vector<bool> input) {
+        if (input.size() >= 128) {
+            return false;
+        }
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kBoolArray) {
+                    RE::BSTSmartPointer<RE::BSScript::Array> a;
+                    RE::SkyrimVM::GetSingleton()->GetImpl()->CreateArray(RE::BSScript::TypeInfo(RE::BSScript::TypeInfo::RawType::kBool),
+                                                                        input.size(), a);
+                    unsigned int i = 0;
+                    for (auto v: input) {
+                        a->data()[i].SetBool(v);
+                    }
+                    s->GetProperty(property)->SetArray(a);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    std::vector<int> GetInventoryObjectPropertyIntArray(RE::StaticFunctionTag *base, RE::Actor *actor, RE::TESObjectARMO *armor, RE::BSFixedString script,
+                                    RE::BSFixedString property) {
+        std::vector<int> rvec;
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kIntArray) {
+                    if (auto a = s->GetProperty(property)->GetArray()) {
+                        for (auto &v: *a) {
+                            rvec.push_back(v.GetSInt());
+                        }
+                    }
+                }
+            }
+        }
+        return rvec;
+    }
+    std::vector<RE::BSFixedString> GetInventoryObjectPropertyStringArray(RE::StaticFunctionTag *base, RE::Actor *actor, RE::TESObjectARMO *armor,
+                                                        RE::BSFixedString script, RE::BSFixedString property) {
+        std::vector<RE::BSFixedString> rvec;
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kStringArray) {
+                    if (auto a = s->GetProperty(property)->GetArray()) {
+                        for (auto &v: *a) {
+                            rvec.push_back(RE::BSFixedString(v.GetString()));
+                        }
+                    }
+                }
+            }
+        }
+        return rvec;
+    }
+    std::vector<float> GetInventoryObjectPropertyFloatArray(RE::StaticFunctionTag *base, RE::Actor *actor, RE::TESObjectARMO *armor,
+                                                        RE::BSFixedString script, RE::BSFixedString property) {
+        std::vector<float> rvec;
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kFloatArray) {
+                    if (auto a = s->GetProperty(property)->GetArray()) {
+                        for (auto &v: *a) {
+                            rvec.push_back(v.GetFloat());
+                        }
+                    }
+                }
+            }
+        }
+        return rvec;
+    }
+    std::vector<bool> GetInventoryObjectPropertyBoolArray(RE::StaticFunctionTag *base, RE::Actor *actor,
+                                                                        RE::TESObjectARMO *armor, RE::BSFixedString script,
+                                                                        RE::BSFixedString property) {
+        std::vector<bool> rvec;
+        if (auto s = GetInventoryObjectScript(actor, armor, script, property)) {
+            if (s->GetProperty(property)) {
+                if (s->GetProperty(property)->GetType().GetRawType() == RE::BSScript::TypeInfo::RawType::kBoolArray) {
+                    if (auto a = s->GetProperty(property)->GetArray()) {
+                        for (auto &v: *a) {
+                            rvec.push_back(v.GetBool());
+                        }
+                    }
+                }
+            }
+        }
+        return rvec;
+    }
 
     bool SetInventoryObjectPropertyFloat(RE::StaticFunctionTag* base, RE::Actor* actor, RE::TESObjectARMO* armor,
                                     RE::BSFixedString script, RE::BSFixedString property, float value) {
@@ -139,6 +293,27 @@ namespace DeviousDevices {
             }
         }
         return 0;
+    }
+    bool SetInventoryObjectPropertyObject(RE::StaticFunctionTag* base, RE::Actor* actor, RE::TESObjectARMO* armor,
+                                   RE::BSFixedString script, RE::BSFixedString property, RE::TESForm* form) {
+        if (!form) {
+            return false;
+        }
+        if (auto s = GetInventoryObjectScript(actor, armor, script,property)) {
+            if (s->GetProperty(property)) {
+                auto handle =
+                    RE::SkyrimVM::GetSingleton()->GetImpl()->GetObjectHandlePolicy()->GetHandleForObject(form->GetFormType(), form);
+                RE::BSTSmartPointer<RE::BSScript::Object> object = nullptr;
+                if (RE::SkyrimVM::GetSingleton()->GetImpl()->FindBoundObject(
+                        handle, s->GetProperty(property)->GetType().GetTypeInfo()->GetName(), object)) {
+                    if (object->GetTypeInfo() == s->GetProperty(property)->GetType().GetTypeInfo()) {
+                        s->GetProperty(property)->SetObject(object);
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
     RE::TESForm* GetInventoryObjectPropertyObject(RE::StaticFunctionTag* base, RE::Actor* actor, RE::TESObjectARMO* armor,
                                              RE::BSFixedString script, RE::BSFixedString property) {
@@ -268,7 +443,7 @@ namespace DeviousDevices {
             delete script;
         }
     }
-
+    
 }
 
 bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
@@ -290,6 +465,15 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyFloat, false);
     REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyString, false);
     REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyBool, false);
+    REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyIntArray, false);
+    REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyFloatArray, false);
+    REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyStringArray, false);
+    REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyBoolArray, false);
+    REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyIntArray, false);
+    REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyFloatArray, false);
+    REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyStringArray, false);
+    REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyBoolArray, false);    
+    REGISTERPAPYRUSFUNC(SetInventoryObjectPropertyObject, false);
     REGISTERPAPYRUSFUNC(GetInventoryObjectPropertyObject, false);
     REGISTERPAPYRUSFUNC(FormHasKeywordString,true);
     REGISTERPAPYRUSFUNC(FindMatchingDevice,true);
@@ -336,7 +520,7 @@ bool DeviousDevices::RegisterFunctions(IVirtualMachine* vm) {
     REGISTERPAPYRUSFUNC(GetWornDevice, true);
     REGISTERPAPYRUSFUNC(PluginInstalled, true);
     REGISTERPAPYRUSFUNC(ExecuteConsoleCmd, false);
-
+    
     #undef REGISTERPAPYRUSFUNC
     return true;
 }
